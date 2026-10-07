@@ -1231,15 +1231,31 @@
                 let msg = `<div>🗺 <b>Трассировка ${value}</b> (${hops.length} хопов)</div>`;
                 msg += `<div class="hop-list">`;
 
-                hops.forEach((hop, index) => {
-                    const hopNum = index + 1;
-                    let rtt = "—";
-                    if (hop.timings && hop.timings.length > 0 && hop.timings[0] !== null) {
-                        rtt = `${hop.timings[0].toFixed(1)} ms`;
-                    }
-                    const addr = hop.resolvedAddress || "—";
-                    msg += `<div class="hop-item"><span class="hop-num">${hopNum}</span><span>${addr}</span><span style="margin-left:auto;color:#a5b4fc">${rtt}</span></div>`;
-                });
+               hops.forEach((hop, index) => {
+    const hopNum = index + 1;
+
+    // Универсальный парсер RTT: число, объект {rtt}, строка или null
+    let rtt = "—";
+    if (Array.isArray(hop.timings) && hop.timings.length > 0) {
+        const t = hop.timings.find(x => x !== null && x !== undefined);
+        if (typeof t === "number") {
+            rtt = `${t.toFixed(1)} ms`;
+        } else if (t && typeof t === "object") {
+            // Иногда приходит {rtt: 12.3} или {value: 12.3}
+            const val = t.rtt ?? t.value ?? t.time;
+            if (typeof val === "number") {
+                rtt = `${val.toFixed(1)} ms`;
+            }
+        } else if (typeof t === "string") {
+            rtt = t;
+        }
+    } else if (typeof hop.timings === "number") {
+        rtt = `${hop.timings.toFixed(1)} ms`;
+    }
+
+    const addr = hop.resolvedAddress || hop.address || "—";
+    msg += `<div class="hop-item"><span class="hop-num">${hopNum}</span><span>${addr}</span><span style="margin-left:auto;color:#a5b4fc">${rtt}</span></div>`;
+});
 
                 msg += `</div>`;
                 status.innerHTML = msg;
