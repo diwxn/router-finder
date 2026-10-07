@@ -131,10 +131,6 @@
             background: linear-gradient(135deg, #4285f4, #34a853);
         }
 
-        .btn-outage {
-            background: linear-gradient(135deg, #f59e0b, #ef4444);
-        }
-
         .status {
             margin-top: 20px;
             padding: 12px;
@@ -190,6 +186,46 @@
             margin: 24px 0 12px;
             text-align: center;
         }
+
+        /* Строка с выбором типа подключения */
+        .setup-row {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+        }
+
+        .setup-row select {
+            flex: 0 0 140px;
+            padding: 14px 12px;
+            border: 2px solid #2a2a35;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            outline: none;
+            background: #0f0f14;
+            color: #e8e8ec;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238888a0' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 36px;
+        }
+
+        .setup-row select:focus {
+            border-color: #667eea;
+            background-color: #13131a;
+        }
+
+        .setup-row select option {
+            background: #1a1a22;
+            color: #e8e8ec;
+        }
+
+        .setup-row .btn-google {
+            flex: 1;
+        }
     </style>
 </head>
 <body>
@@ -217,13 +253,16 @@
             </button>
         </div>
 
-        <div class="section-title">Инструменты</div>
-        <div class="buttons">
-            <button class="btn-google" onclick="searchGooglePPPoE()" style="grid-column: 1 / -1;">
-                🛠 Настройка PPPoE в Google
-            </button>
-            <button class="btn-outage" onclick="checkOutage()" style="grid-column: 1 / -1;">
-                📡 Проверить сбои на Сбой.рф
+        <div class="section-title">Настройка подключения</div>
+        <div class="setup-row">
+            <select id="connType">
+                <option value="PPPoE">PPPoE</option>
+                <option value="IPoE">IPoE (DHCP)</option>
+                <option value="PPTP">PPTP</option>
+                <option value="L2TP">L2TP</option>
+            </select>
+            <button class="btn-google" onclick="searchGoogleSetup()">
+                🛠 Найти настройку
             </button>
         </div>
 
@@ -239,28 +278,25 @@
         const SHOPS = {
             dns: {
                 name: "DNS",
-                domain: "dns-shop.ru",
                 url: (q) => `https://www.dns-shop.ru/search/?q=${encodeURIComponent(q)}`
             },
             mvideo: {
                 name: "М.Видео",
-                domain: "mvideo.ru",
                 url: (q) => `https://www.mvideo.ru/search?q=${encodeURIComponent(q)}`
             },
             citilink: {
                 name: "Ситилинк",
-                domain: "citilink.ru",
                 url: (q) => `https://www.citilink.ru/search/?text=${encodeURIComponent(q)}`
             },
             ozon: {
                 name: "Ozon",
-                domain: "ozon.ru",
                 url: (q) => `https://www.ozon.ru/search/?text=${encodeURIComponent(q)}`
             }
         };
 
         const input = document.getElementById("modelInput");
         const status = document.getElementById("status");
+        const connType = document.getElementById("connType");
 
         // --- Поиск в конкретном магазине ---
         function searchIn(shopKey) {
@@ -297,16 +333,16 @@
             status.className = "status success";
 
             Object.values(SHOPS).forEach((shop, index) => {
-                // Небольшая задержка, чтобы браузер не блокировал всплывающие окна
                 setTimeout(() => {
                     window.open(shop.url(model), "_blank");
                 }, index * 150);
             });
         }
 
-        // --- Поиск настройки PPPoE в Google ---
-        function searchGooglePPPoE() {
+        // --- Поиск настройки подключения в Google ---
+        function searchGoogleSetup() {
             const model = input.value.trim();
+            const type = connType.value;
 
             if (!model) {
                 status.textContent = "⚠️ Введите модель роутера для поиска настроек";
@@ -315,46 +351,22 @@
                 return;
             }
 
-            // Кавычки вокруг модели — для точного поиска
-            const query = `"${model}" настройка PPPoE`;
+            const query = `${model} настройка ${type}`;
             const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
 
-            status.innerHTML = `🛠 Ищу настройки PPPoE для <b>${model}</b>...`;
+            status.innerHTML = `🛠 Ищу настройку <b>${type}</b> для <b>${model}</b>...`;
             status.className = "status success";
 
             window.open(url, "_blank");
         }
 
-        // --- Проверка сбоев через Сбой.рф ---
-        function checkOutage() {
-            const model = input.value.trim();
-
-            // Если модель не введена — открываем общую страницу Сбой.рф
-            if (!model) {
-                status.innerHTML = `📡 Открываю <b>Сбой.рф</b>...`;
-                status.className = "status success";
-                window.open("https://sбой.рф/", "_blank");
-                return;
-            }
-
-            // Пытаемся определить магазин по введённой модели (не всегда сработает)
-            // По умолчанию — общая страница
-            status.innerHTML = `📡 Проверяю сбои для <b>${model}</b>...`;
-            status.className = "status success";
-
-            // Открываем общую страницу Сбой.рф (там можно выбрать нужный сервис)
-            window.open("https://sбой.рф/", "_blank");
-        }
-
-        // --- Enter = поиск в DNS ---
+        // --- Enter = поиск в DNS, Ctrl+Enter = искать везде ---
         input.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                searchIn("dns");
-            }
-            // Ctrl+Enter = искать везде
             if (e.key === "Enter" && e.ctrlKey) {
                 e.preventDefault();
                 searchAll();
+            } else if (e.key === "Enter") {
+                searchIn("dns");
             }
         });
     </script>
