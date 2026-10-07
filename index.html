@@ -651,73 +651,68 @@ async function checkDefaults() {
     status.innerHTML = `🎯 Ищу данные для <b>${model}</b>...`;
     status.className = "status";
 
-    // Пытаемся разбить модель на бренд и название.
-    // Например, "TP-Link Archer AX55" -> brand: "TP-Link", model: "Archer AX55"
+    // Разбиваем "TP-Link Archer AX55" на бренд и модель
     const parts = model.split(/\s+/);
-    let brand = parts[0]; // Первое слово считаем брендом
-    let modelName = parts.slice(1).join(" "); // Остальное — моделью
+    let brand = parts[0];
+    let modelName = parts.slice(1).join(" ");
 
-    // Если ввели только одно слово, пробуем угадать бренд через наш findBrand
+    // Если ввели одно слово — пытаемся угадать бренд
     if (!modelName) {
         const found = findBrand(model);
         if (found) {
-            brand = found.brand; // Например, "tp-link"
-            modelName = model.replace(new RegExp(brand, 'i'), '').trim() || model;
+            brand = found.brand;
+            modelName = model;
         } else {
-            // Если бренд не угадан, а ввели одно слово — считаем это моделью
             modelName = model;
         }
     }
 
-    // Формируем запрос к API ssid.ai через наш прокси.
-    // Эндпоинт может отличаться, смотри документацию https://ssid.ai/api-docs
-    const apiUrl = `https://ssid.ai/api/v1/router?brand=${encodeURIComponent(brand)}&model=${encodeURIComponent(modelName)}`;
-    
+    // Запрос через прокси (ключ добавляется в воркере)
+    const apiUrl = `https://ssid.ai/api/v1/device?brand=${encodeURIComponent(brand)}&model=${encodeURIComponent(modelName)}`;
+    const proxyUrl = `${WORKER_URL}/?url=${encodeURIComponent(apiUrl)}`;
+
     try {
-        const response = await fetch(`${WORKER_URL}/?url=${encodeURIComponent(apiUrl)}`);
-        
-        if (!response.ok) {
-            throw new Error(`API ответил статусом ${response.status}`);
-        }
-        
+        const response = await fetch(proxyUrl);
         const data = await response.json();
 
-        // Проверяем, нашли ли данные
-        if (data && data.url) {
-            // Если API вернул прямую ссылку на страницу — открываем её!
-            status.innerHTML = `✅ Нашёл! Открываю <b>${model}</b> на ssid.ai...`;
-            status.className = "status success";
-            window.open(data.url, "_blank");
-        } else if (data && data.defaultGatewayIp) {
-            // Если API вернул данные, но без ссылки (например, у них есть только JSON)
-            let msg = `🎯 <b>${data.brand || brand} ${data.modelName || modelName}</b><br>`;
-            msg += `IP входа: <code>${data.defaultGatewayIp}</code><br>`;
+        // Случай 1: 409 — модель неоднозначная, API вернул список кандидатов
+        if (response.status === 409 && data.candidates) {
+            let msg = `🤔 Модель неоднозначная. Нашлось несколько вариантов:<br>`;
+            data.candidates.forEach((c) => {
+                msg += `<a href="${c.url}" target="_blank" style="color:#a5b4fc">${c.slug}</a><br>`;
+            });
+            status.innerHTML = msg;
+            status.className = "status warning";
+            return;
+        }
+
+        // Случай 2: нашли данные
+        if (data && data.slug) {
+            let msg = `🎯 <b>${data.brand} ${data.modelName}</b><br>`;
+            if (data.defaultGatewayIp) msg += `IP входа: <code>${data.defaultGatewayIp}</code><br>`;
             if (data.loginHost) msg += `Хост: <code>${data.loginHost}</code><br>`;
             if (data.defaultUsername) msg += `Логин: <code>${data.defaultUsername}</code><br>`;
             if (data.defaultPassword) msg += `Пароль: <code>${data.defaultPassword}</code><br>`;
-            
-            // Добавляем ссылку на страницу, если она есть в ответе
+            if (data.credTypeMeaning) msg += `<small>${data.credTypeMeaning}</small><br>`;
+
             if (data.url) {
-                msg += `<br><a href="${data.url}" target="_blank" style="color:#a5b4fc">Открыть на ssid.ai</a>`;
+                msg += `<br><a href="${data.url}" target="_blank" style="color:#a5b4fc">Открыть на ssid.ai →</a>`;
             }
             status.innerHTML = msg;
             status.className = "status success";
-        } else {
-            // Если API ничего не нашёл, открываем общую страницу
-            status.innerHTML = `ℹ️ Для <b>${model}</b> данных не найдено. Открываю общий список...`;
-            status.className = "status";
-            window.open("https://ssid.ai/routers", "_blank");
+            return;
         }
 
+        // Случай 3: ничего не нашли
+        status.innerHTML = `ℹ️ Для <b>${model}</b> данных не найдено.<br><small>Попробуй ввести бренд и модель точнее.</small>`;
+        status.className = "status";
+
     } catch (error) {
-        console.error("Ошибка ssid.ai:", error);
-        status.innerHTML = `⚠️ Не удалось получить данные. Открываю общий список...`;
-        status.className = "status warning";
-        // В случае любой ошибки — открываем общую страницу
-        window.open("https://ssid.ai/routers", "_blank");
+        console.error("ssid.ai error:", error);
+        status.innerHTML = `❌ Ошибка запроса к ssid.ai: ${error.message}`;
+        status.className = "status error";
     }
 }
-
         // --- Слушатели ---
         input.addEventListener("input", updateBrandLogo);
 
