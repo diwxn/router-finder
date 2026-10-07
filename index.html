@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🔍 Поиск роутера</title>
 
-    <!-- Иконка (лупа) на вкладке браузера -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
 
     <style>
@@ -19,8 +18,8 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: #0f0f14;
             background-image:
-                radial-gradient(circle at 20% 20%, rgba(102, 126, 234, 0.15), transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.15), transparent 50%);
+                radial-gradient(circle at 20% 20%, rgba(102, 126, 234, 0.1), transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.1), transparent 50%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -53,15 +52,18 @@
             margin-bottom: 30px;
         }
 
-        .input-group {
+        /* Обёртка поля ввода + логотип */
+        .input-wrapper {
+            position: relative;
             display: flex;
-            gap: 10px;
+            align-items: center;
             margin-bottom: 20px;
         }
 
         input[type="text"] {
             flex: 1;
             padding: 14px 18px;
+            padding-left: 56px; /* место под логотип */
             border: 2px solid #2a2a35;
             border-radius: 12px;
             font-size: 16px;
@@ -80,6 +82,25 @@
             background: #13131a;
         }
 
+        /* Логотип бренда */
+        .brand-logo {
+            position: absolute;
+            left: 14px;
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            border-radius: 6px;
+            background: #fff;
+            padding: 3px;
+        }
+
+        .brand-logo.visible {
+            opacity: 1;
+        }
+
         button {
             padding: 14px 24px;
             border: none;
@@ -88,12 +109,12 @@
             font-weight: 600;
             color: #fff;
             cursor: pointer;
-            transition: transform 0.1s, opacity 0.2s, box-shadow 0.2s;
+            transition: transform 0.1s, filter 0.2s, box-shadow 0.2s;
             white-space: nowrap;
         }
 
         button:hover {
-            opacity: 0.9;
+            filter: brightness(1.15);
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
         }
 
@@ -107,33 +128,29 @@
             gap: 12px;
         }
 
+        /* Сдержанные цвета кнопок */
         .btn-dns {
-            background: linear-gradient(135deg, #ff6b00, #ff9500);
+            background: #c2410c;
         }
 
         .btn-mvideo {
-            background: linear-gradient(135deg, #e6002d, #ff1f4b);
+            background: #b91c1c;
         }
 
         .btn-citilink {
-            background: linear-gradient(135deg, #00a651, #00c853);
+            background: #15803d;
         }
 
         .btn-ozon {
-            background: linear-gradient(135deg, #005bff, #3d8bff);
+            background: #1d4ed8;
         }
 
         .btn-search-all {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: #5b21b6;
         }
 
         .btn-google {
-            background: linear-gradient(135deg, #4285f4, #34a853);
-        }
-
-        .btn-check {
-            background: linear-gradient(135deg, #6b7280, #4b5563);
-            grid-column: 1 / -1;
+            background: #0f766e;
         }
 
         .status {
@@ -165,12 +182,6 @@
             color: #fbbf24;
         }
 
-        .status.error {
-            background: rgba(239, 68, 68, 0.1);
-            border-color: rgba(239, 68, 68, 0.4);
-            color: #f87171;
-        }
-
         .hint {
             margin-top: 16px;
             font-size: 13px;
@@ -198,7 +209,6 @@
             text-align: center;
         }
 
-        /* Строка с выбором типа подключения */
         .setup-row {
             display: flex;
             gap: 10px;
@@ -237,19 +247,6 @@
         .setup-row .btn-google {
             flex: 1;
         }
-
-        /* Стили для кнопок проверки внутри магазинов */
-        .shop-item {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .shop-item .btn-check {
-            padding: 8px 12px;
-            font-size: 12px;
-            grid-column: auto; /* Сбрасываем растягивание */
-        }
     </style>
 </head>
 <body>
@@ -257,7 +254,8 @@
         <h1>🔍 Поиск роутера</h1>
         <p class="subtitle">Введите модель и выберите действие</p>
 
-        <div class="input-group">
+        <div class="input-wrapper">
+            <img id="brandLogo" class="brand-logo" alt="Логотип бренда">
             <input
                 type="text"
                 id="modelInput"
@@ -268,22 +266,10 @@
 
         <div class="section-title">Магазины</div>
         <div class="buttons">
-            <div class="shop-item">
-                <button class="btn-dns" onclick="searchIn('dns')">DNS</button>
-                <button class="btn-check" onclick="checkAvailability('dns')">Проверить</button>
-            </div>
-            <div class="shop-item">
-                <button class="btn-mvideo" onclick="searchIn('mvideo')">М.Видео</button>
-                <button class="btn-check" onclick="checkAvailability('mvideo')">Проверить</button>
-            </div>
-            <div class="shop-item">
-                <button class="btn-citilink" onclick="searchIn('citilink')">Ситилинк</button>
-                <button class="btn-check" onclick="checkAvailability('citilink')">Проверить</button>
-            </div>
-            <div class="shop-item">
-                <button class="btn-ozon" onclick="searchIn('ozon')">Ozon</button>
-                <button class="btn-check" onclick="checkAvailability('ozon')">Проверить</button>
-            </div>
+            <button class="btn-dns" onclick="searchIn('dns')">DNS</button>
+            <button class="btn-mvideo" onclick="searchIn('mvideo')">М.Видео</button>
+            <button class="btn-citilink" onclick="searchIn('citilink')">Ситилинк</button>
+            <button class="btn-ozon" onclick="searchIn('ozon')">Ozon</button>
             <button class="btn-search-all" onclick="searchAll()" style="grid-column: 1 / -1;">
                 🔎 Искать во всех магазинах
             </button>
@@ -314,29 +300,78 @@
         const SHOPS = {
             dns: {
                 name: "DNS",
-                domain: "dns-shop.ru",
                 url: (q) => `https://www.dns-shop.ru/search/?q=${encodeURIComponent(q)}`
             },
             mvideo: {
                 name: "М.Видео",
-                domain: "mvideo.ru",
                 url: (q) => `https://www.mvideo.ru/search?q=${encodeURIComponent(q)}`
             },
             citilink: {
                 name: "Ситилинк",
-                domain: "citilink.ru",
                 url: (q) => `https://www.citilink.ru/search/?text=${encodeURIComponent(q)}`
             },
             ozon: {
                 name: "Ozon",
-                domain: "ozon.ru",
                 url: (q) => `https://www.ozon.ru/search/?text=${encodeURIComponent(q)}`
             }
         };
 
+        // Известные бренды роутеров и их домены для LogoKit
+        const BRANDS = {
+            "tp-link": "tp-link.com",
+            "tplink": "tp-link.com",
+            "keenetic": "keenetic.com",
+            "asus": "asus.com",
+            "xiaomi": "mi.com",
+            "mercusys": "mercusys.com",
+            "d-link": "dlink.com",
+            "dlink": "dlink.com",
+            "huawei": "huawei.com",
+            "zyxel": "zyxel.com",
+            "ubiquiti": "ui.com",
+            "mikrotik": "mikrotik.com",
+            "netgear": "netgear.com",
+            "tenda": "tenda.com",
+            "totolink": "totolink.net"
+        };
+
+        const LOGOKIT_TOKEN = "pk_demo_5f8a9c3e2b1d4a6f"; // демо-токен
+
         const input = document.getElementById("modelInput");
         const status = document.getElementById("status");
         const connType = document.getElementById("connType");
+        const brandLogo = document.getElementById("brandLogo");
+
+        let currentLogoUrl = "";
+
+        // --- Определение бренда и загрузка логотипа ---
+        function updateBrandLogo() {
+            const model = input.value.trim().toLowerCase();
+
+            // Ищем бренд по началу строки
+            let brandDomain = null;
+            for (const [brand, domain] of Object.entries(BRANDS)) {
+                if (model.startsWith(brand)) {
+                    brandDomain = domain;
+                    break;
+                }
+            }
+
+            if (!brandDomain) {
+                brandLogo.classList.remove("visible");
+                currentLogoUrl = "";
+                return;
+            }
+
+            const logoUrl = `https://img.logokit.com/${brandDomain}?token=${LOGOKIT_TOKEN}`;
+
+            if (logoUrl === currentLogoUrl) return;
+            currentLogoUrl = logoUrl;
+
+            brandLogo.onload = () => brandLogo.classList.add("visible");
+            brandLogo.onerror = () => brandLogo.classList.remove("visible");
+            brandLogo.src = logoUrl;
+        }
 
         // --- Поиск в конкретном магазине ---
         function searchIn(shopKey) {
@@ -400,104 +435,9 @@
             window.open(url, "_blank");
         }
 
-        // --- Проверка доступности магазина через Check-Host.net ---
-        async function checkAvailability(shopKey) {
-            const shop = SHOPS[shopKey];
-            const domain = shop.domain;
+        // --- Слушатели ---
+        input.addEventListener("input", updateBrandLogo);
 
-            status.innerHTML = `📡 Проверяю <b>${shop.name}</b>...`;
-            status.className = "status";
-            status.style.color = "#a0a0b8";
-
-            try {
-                // 1. Запрос на проверку
-                // Используем HTTP-проверку с максимальным количеством узлов 1
-                const checkResponse = await fetch(
-                    `https://check-host.net/check-http?host=${encodeURIComponent(domain)}&max_nodes=1`,
-                    {
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    }
-                );
-
-                if (!checkResponse.ok) {
-                    throw new Error(`Check-Host вернул статус ${checkResponse.status}`);
-                }
-
-                const checkData = await checkResponse.json();
-                const requestId = checkData.request_id;
-
-                // 2. Ждём пару секунд, чтобы проверка выполнилась
-                await new Promise(resolve => setTimeout(resolve, 3000));
-
-                // 3. Запрашиваем результат
-                const resultResponse = await fetch(
-                    `https://check-host.net/check-result/${requestId}`,
-                    {
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    }
-                );
-
-                if (!resultResponse.ok) {
-                    throw new Error(`Check-Host вернул статус ${resultResponse.status} при получении результата`);
-                }
-
-                const resultData = await resultResponse.json();
-
-                // Разбираем результат
-                // Структура: { "node_id": [ [success, time, status_message, status_code, ip] ] }
-                const nodes = Object.keys(resultData);
-                if (nodes.length === 0) {
-                    status.innerHTML = `📡 <b>${shop.name}</b>: нет данных от узлов проверки`;
-                    status.className = "status warning";
-                    return;
-                }
-
-                // Берём первый узел (у нас max_nodes=1)
-                const nodeId = nodes[0];
-                const nodeResults = resultData[nodeId];
-
-                if (!Array.isArray(nodeResults) || nodeResults.length === 0) {
-                    status.innerHTML = `📡 <b>${shop.name}</b>: проверка ещё не завершена или нет ответа`;
-                    status.className = "status warning";
-                    return;
-                }
-
-                // Первый результат в массиве
-                const firstResult = nodeResults[0];
-
-                if (firstResult === null) {
-                    status.innerHTML = `📡 <b>${shop.name}</b>: узел ещё проверяет...`;
-                    status.className = "status warning";
-                    return;
-                }
-
-                // firstResult = [success, time, message, statusCode, ip]
-                const success = firstResult[0];
-                const time = firstResult[1];
-                const message = firstResult[2];
-                const statusCode = firstResult[3];
-
-                if (success === 1) {
-                    status.innerHTML = `✅ <b>${shop.name}</b>: доступен (${time.toFixed(2)}с, ${statusCode})`;
-                    status.className = "status success";
-                } else {
-                    status.innerHTML = `❌ <b>${shop.name}</b>: проблема — ${message}`;
-                    status.className = "status error";
-                }
-
-            } catch (error) {
-                // Скорее всего, CORS-блокировка
-                console.error("Ошибка проверки:", error);
-                status.innerHTML = `⚠️ <b>${shop.name}</b>: не удалось проверить (CORS)`;
-                status.className = "status warning";
-            }
-        }
-
-        // --- Enter = поиск в DNS, Ctrl+Enter = искать везде ---
         input.addEventListener("keydown", (e) => {
             if (e.key === "Enter" && e.ctrlKey) {
                 e.preventDefault();
