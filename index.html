@@ -597,67 +597,117 @@
         }
 
         // --- Shodan InternetDB ---
-        async function checkShodan() {
-            const value = input.value.trim();
+       // --- Shodan InternetDB (принимает IP или домен) ---
+async function checkShodan() {
+    const value = input.value.trim();
 
-            if (!value) {
-                status.textContent = "⚠️ Введите IP-адрес для проверки";
+    if (!value) {
+        status.textContent = "⚠️ Введите IP или домен для проверки";
+        status.className = "status warning";
+        input.focus();
+        return;
+    }
+
+    const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+    // Простая проверка на домен: буквы, цифры, дефисы, точки
+    const domainRegex = /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+
+    let ip = null;
+    let targetLabel = value;
+
+    // Шаг 1: определяем, что ввёл пользователь
+    if (ipRegex.test(value)) {
+        ip = value;
+        targetLabel = `${value} (IP)`;
+    } else if (domainRegex.test(value)) {
+        // Шаг 2: резолвим домен через Google DoH
+        status.innerHTML = `🔎 Определяю IP для <b>${value}</b>...`;
+        status.className = "status";
+
+        try {
+            const dohUrl = `https://dns.google/resolve?name=${encodeURIComponent(value)}&type=A`;
+            const dohResponse = await fetch(`${WORKER_URL}/?url=${encodeURIComponent(dohUrl)}`);
+            const dohData = await dohResponse.json();
+
+            if (!dohData.Answer || dohData.Answer.length === 0) {
+                status.innerHTML = `⚠️ Не удалось определить IP для <b>${value}</b>.<br><small>Проверьте домен или введите IP вручную.</small>`;
                 status.className = "status warning";
-                input.focus();
                 return;
             }
 
-            // Проверка на IP
-            const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-            if (!ipRegex.test(value)) {
-                status.innerHTML = `⚠️ <b>${value}</b> не похоже на IP-адрес.<br><small>Введите IP (например, 8.8.8.8) или сначала найдите свой IP.</small>`;
+            // Берём первый A-запись
+            const aRecord = dohData.Answer.find(r => r.type === 1);
+            if (!aRecord) {
+                status.innerHTML = `⚠️ У <b>${value}</b> нет A-записи (IPv4).<br><small>Возможно, только IPv6.</small>`;
                 status.className = "status warning";
                 return;
             }
 
-            status.innerHTML = `📡 Проверяю <b>${value}</b> через Shodan...`;
-            status.className = "status";
+            ip = aRecord.data;
+            targetLabel = `${value} → ${ip}`;
 
-            try {
-                const url = `${WORKER_URL}/?url=${encodeURIComponent("https://internetdb.shodan.io/" + value)}`;
-                const response = await fetch(url);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                if (data.detail) {
-                    // Shodan вернул сообщение об ошибке (например, "No information available")
-                    status.innerHTML = `ℹ️ <b>${value}</b>: ${data.detail}`;
-                    status.className = "status";
-                    return;
-                }
-
-                const ports = data.ports || [];
-                const vulns = data.vulns || [];
-                const hostnames = data.hostnames || [];
-                const tags = data.tags || [];
-
-                let msg = `📡 <b>${value}</b><br>`;
-                msg += `Портов: <b>${ports.length}</b>`;
-                if (ports.length > 0) msg += ` <small>(${ports.slice(0, 8).join(", ")}${ports.length > 8 ? "…" : ""})</small>`;
-                msg += `<br>Уязвимостей: <b>${vulns.length}</b>`;
-                if (vulns.length > 0) msg += ` <small>(${vulns.slice(0, 3).join(", ")}${vulns.length > 3 ? "…" : ""})</small>`;
-
-                if (hostnames.length > 0) msg += `<br>Hostname: <small>${hostnames.slice(0, 3).join(", ")}</small>`;
-                if (tags.length > 0) msg += `<br>Теги: <small>${tags.join(", ")}</small>`;
-
-                status.innerHTML = msg;
-                status.className = vulns.length > 0 ? "status error" : "status success";
-
-            } catch (error) {
-                console.error("Shodan error:", error);
-                status.innerHTML = `❌ Ошибка Shodan: ${error.message}`;
-                status.className = "status error";
-            }
+        } catch (error) {
+            console.error("DNS resolve error:", error);
+            status.innerHTML = `❌ Ошибка DNS-запроса: ${error.message}`;
+            status.className = "status error";
+            return;
         }
+    } else {
+        status.innerHTML = `⚠️ <b>${value}</b> не похоже ни на IP, ни на домен.`;
+        status.className = "status warning";
+        return;
+    }
+
+    // Шаг 3: запрашиваем Shodan по полученному IP
+    status.innerHTML = `📡 Проверяю <b>${targetLabel}</b> через Shodan...`;
+    status.className = "status";
+
+    try {
+        const shodanUrl = `https://internetdb.shodan.io/${ip}`;
+        const response = await fetch(`${WORKER_URL}/?url=${encodeURIComponent(shodanUrl)}`);
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.detail) {
+            status.innerHTML = `ℹ️ <b>${targetLabel}</b>: ${data.detail}`;
+            status.className = "status";
+            return;
+        }
+
+        const ports = data.ports || [];
+        const vulns = data.vulns || [];
+        const hostnames = data.hostnames || [];
+        const tags = data.tags || [];
+
+        let msg = `📡 <b>${targetLabel}</b><br>`;
+        msg += `Портов: <b>${ports.length}</b>`;
+        if (ports.length > 0) {
+            msg += ` <small>(${ports.slice(0, 8).join(", ")}${ports.length > 8 ? "…" : ""})</small>`;
+        }
+        msg += `<br>Уязвимостей: <b>${vulns.length}</b>`;
+        if (vulns.length > 0) {
+            msg += ` <small>(${vulns.slice(0, 3).join(", ")}${vulns.length > 3 ? "…" : ""})</small>`;
+        }
+        if (hostnames.length > 0) {
+            msg += `<br>Hostname: <small>${hostnames.slice(0, 3).join(", ")}</small>`;
+        }
+        if (tags.length > 0) {
+            msg += `<br>Теги: <small>${tags.join(", ")}</small>`;
+        }
+
+        status.innerHTML = msg;
+        status.className = vulns.length > 0 ? "status error" : "status success";
+
+    } catch (error) {
+        console.error("Shodan error:", error);
+        status.innerHTML = `❌ Ошибка Shodan: ${error.message}`;
+        status.className = "status error";
+    }
+}
 
         // --- Заводские данные (ssid.ai через прокси) ---
        // --- Заводские данные (через ssid.ai API) ---
