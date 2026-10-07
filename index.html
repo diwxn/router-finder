@@ -131,110 +131,86 @@
             gap: 12px;
         }
 
-        .btn-dns {
-            background: #c2410c;
+        .btn-dns { background: #c2410c; }
+        .btn-mvideo { background: #b91c1c; }
+        .btn-citilink { background: #15803d; }
+        .btn-ozon { background: #1d4ed8; }
+        .btn-search-all { background: #5b21b6; }
+        .btn-google { background: #0f766e; }
+        .btn-shodan { background: #7c2d12; }
+        .btn-ssid { background: #1e40af; }
+
+        .status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            text-align: center;
+            color: #a0a0b8;
+            background: #13131a;
+            border: 1px solid #2a2a35;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            transition: all 0.3s;
+            line-height: 1.6;
+            flex-direction: column;
+            gap: 4px;
         }
 
-        .btn-mvideo {
-            background: #b91c1c;
+        .status.success {
+            background: rgba(0, 200, 83, 0.1);
+            border-color: rgba(0, 200, 83, 0.4);
+            color: #4ade80;
         }
 
-        .btn-citilink {
-            background: #15803d;
+        .status.warning {
+            background: rgba(255, 193, 7, 0.1);
+            border-color: rgba(255, 193, 7, 0.4);
+            color: #fbbf24;
         }
 
-        .btn-ozon {
-            background: #1d4ed8;
+        .status.error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #f87171;
         }
 
-        .btn-search-all {
-            background: #5b21b6;
+        .status code {
+            background: #0f0f14;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #a5b4fc;
+            border: 1px solid #2a2a35;
+            white-space: nowrap;
+            display: inline-block;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: middle;
         }
 
-        .btn-google {
-            background: #0f766e;
+        .status small {
+            color: #8888a0;
+            font-size: 12px;
+            display: block;
+            margin-top: 4px;
         }
 
-        .btn-shodan {
-            background: #7c2d12;
+        .status a {
+            color: #a5b4fc;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 4px;
         }
 
-        .btn-ssid {
-            background: #1e40af;
+        .status a:hover {
+            text-decoration: underline;
         }
-
-.status {
-    margin-top: 20px;
-    padding: 12px;
-    border-radius: 10px;
-    font-size: 14px;
-    text-align: center;
-    color: #a0a0b8;
-    background: #13131a;
-    border: 1px solid #2a2a35;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    word-break: break-word;      /* ← было break-all, стало мягче */
-    overflow-wrap: anywhere;     /* ← ломает длинные слова, если надо */
-    transition: all 0.3s;
-    line-height: 1.6;            /* ← чуть больше воздуха между строками */
-    flex-direction: column;      /* ← чтобы содержимое шло столбиком, а не наезжало */
-    gap: 4px;
-}
-
-.status.success {
-    background: rgba(0, 200, 83, 0.1);
-    border-color: rgba(0, 200, 83, 0.4);
-    color: #4ade80;
-}
-
-.status.warning {
-    background: rgba(255, 193, 7, 0.1);
-    border-color: rgba(255, 193, 7, 0.4);
-    color: #fbbf24;
-}
-
-.status.error {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(239, 68, 68, 0.4);
-    color: #f87171;
-}
-
-/* Тег <code> внутри статуса — не должен вылезать */
-.status code {
-    background: #0f0f14;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 13px;
-    color: #a5b4fc;
-    border: 1px solid #2a2a35;
-    white-space: nowrap;         /* сам код не переносится */
-    display: inline-block;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;     /* если совсем длинный — обрежется с … */
-    vertical-align: middle;
-}
-
-.status small {
-    color: #8888a0;
-    font-size: 12px;
-    display: block;              /* ← уводит small на отдельную строку */
-    margin-top: 4px;
-}
-
-.status a {
-    color: #a5b4fc;
-    text-decoration: none;
-    display: inline-block;       /* ← чтобы ссылка не разрывалась посередине */
-    margin-top: 4px;
-}
-
-.status a:hover {
-    text-decoration: underline;
-}
 
         .hint {
             margin-top: 16px;
@@ -301,6 +277,146 @@
         .setup-row .btn-google {
             flex: 1;
         }
+
+        /* --- История --- */
+        .history {
+            margin-top: 25px;
+            border-top: 1px solid #2a2a35;
+            padding-top: 20px;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .history-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #a0a0b8;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .clear-btn {
+            background: transparent;
+            border: 1px solid #3a3a48;
+            color: #8888a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .clear-btn:hover {
+            color: #ff5c5c;
+            border-color: #ff5c5c;
+            background: rgba(255, 92, 92, 0.1);
+            box-shadow: none;
+            filter: none;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+
+        .history-empty {
+            color: #55556a;
+            font-size: 13px;
+            text-align: center;
+            padding: 15px;
+            font-style: italic;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #13131a;
+            border: 1px solid #2a2a35;
+            border-radius: 10px;
+            padding: 8px 12px;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .history-item:hover {
+            background: #181820;
+            border-color: #3a3a48;
+        }
+
+        .history-model {
+            flex: 1;
+            color: #e8e8ec;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 4px 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .history-model:hover {
+            color: #a5b4fc;
+        }
+
+        .history-action {
+            font-size: 10px;
+            color: #66667a;
+            background: #0f0f14;
+            border: 1px solid #2a2a35;
+            border-radius: 5px;
+            padding: 2px 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .history-time {
+            font-size: 11px;
+            color: #55556a;
+            white-space: nowrap;
+        }
+
+        .remove-btn {
+            background: transparent;
+            border: none;
+            color: #55556a;
+            font-size: 18px;
+            line-height: 1;
+            padding: 2px 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 400;
+        }
+
+        .remove-btn:hover {
+            color: #ff5c5c;
+            background: rgba(255, 92, 92, 0.1);
+            box-shadow: none;
+            filter: none;
+        }
+
+        .history-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .history-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .history-list::-webkit-scrollbar-thumb {
+            background: #2a2a35;
+            border-radius: 3px;
+        }
+        .history-list::-webkit-scrollbar-thumb:hover {
+            background: #3a3a48;
+        }
     </style>
 </head>
 <body>
@@ -354,6 +470,14 @@
             💡 Пишите модель как на коробке, например:<br>
             <code>TP-Link Archer AX55</code> · <code>Keenetic Giga</code> · <code>Asus RT-AX88U</code>
         </p>
+
+        <div class="history">
+            <div class="history-header">
+                <span class="history-title">История</span>
+                <button class="clear-btn" onclick="clearHistory()">Очистить</button>
+            </div>
+            <div class="history-list" id="historyList"></div>
+        </div>
     </div>
 
     <script>
@@ -548,6 +672,8 @@
                 status.innerHTML = `✅ Открываю поиск в <b>${shop.name}</b>...`;
             }
             status.className = "status success";
+
+            addToHistory(model, shopKey);
             window.open(url, "_blank");
         }
 
@@ -568,6 +694,8 @@
                 status.innerHTML = `🔎 Открываю поиск во <b>всех магазинах</b>...`;
             }
             status.className = "status success";
+
+            addToHistory(model, "all");
 
             Object.values(SHOPS).forEach((shop, index) => {
                 setTimeout(() => {
@@ -593,199 +721,338 @@
 
             status.innerHTML = `🛠 Ищу настройку <b>${type}</b> для <b>${model}</b>...`;
             status.className = "status success";
+
+            addToHistory(model, "pppoe");
             window.open(url, "_blank");
         }
 
-        // --- Shodan InternetDB ---
-       // --- Shodan InternetDB (принимает IP или домен) ---
-async function checkShodan() {
-    const value = input.value.trim();
+        // --- Shodan InternetDB (принимает IP или домен) ---
+        async function checkShodan() {
+            const value = input.value.trim();
 
-    if (!value) {
-        status.textContent = "⚠️ Введите IP или домен для проверки";
-        status.className = "status warning";
-        input.focus();
-        return;
-    }
+            if (!value) {
+                status.textContent = "⚠️ Введите IP или домен для проверки";
+                status.className = "status warning";
+                input.focus();
+                return;
+            }
 
-    const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-    // Простая проверка на домен: буквы, цифры, дефисы, точки
-    const domainRegex = /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+            const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+            const domainRegex = /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
 
-    let ip = null;
-    let targetLabel = value;
+            let ip = null;
+            let targetLabel = value;
 
-    // Шаг 1: определяем, что ввёл пользователь
-    if (ipRegex.test(value)) {
-        ip = value;
-        targetLabel = `${value} (IP)`;
-    } else if (domainRegex.test(value)) {
-        // Шаг 2: резолвим домен через Google DoH
-        status.innerHTML = `🔎 Определяю IP для <b>${value}</b>...`;
-        status.className = "status";
+            if (ipRegex.test(value)) {
+                ip = value;
+                targetLabel = `${value} (IP)`;
+            } else if (domainRegex.test(value)) {
+                status.innerHTML = `🔎 Определяю IP для <b>${value}</b>...`;
+                status.className = "status";
 
-        try {
-            const dohUrl = `https://dns.google/resolve?name=${encodeURIComponent(value)}&type=A`;
-            const dohResponse = await fetch(`${WORKER_URL}/?url=${encodeURIComponent(dohUrl)}`);
-            const dohData = await dohResponse.json();
+                try {
+                    const dohUrl = `https://dns.google/resolve?name=${encodeURIComponent(value)}&type=A`;
+                    const dohResponse = await fetch(`${WORKER_URL}/?url=${encodeURIComponent(dohUrl)}`);
+                    const dohData = await dohResponse.json();
 
-            if (!dohData.Answer || dohData.Answer.length === 0) {
-                status.innerHTML = `⚠️ Не удалось определить IP для <b>${value}</b>.<br><small>Проверьте домен или введите IP вручную.</small>`;
+                    if (!dohData.Answer || dohData.Answer.length === 0) {
+                        status.innerHTML = `⚠️ Не удалось определить IP для <b>${value}</b>.<br><small>Проверьте домен или введите IP вручную.</small>`;
+                        status.className = "status warning";
+                        return;
+                    }
+
+                    const aRecord = dohData.Answer.find(r => r.type === 1);
+                    if (!aRecord) {
+                        status.innerHTML = `⚠️ У <b>${value}</b> нет A-записи (IPv4).<br><small>Возможно, только IPv6.</small>`;
+                        status.className = "status warning";
+                        return;
+                    }
+
+                    ip = aRecord.data;
+                    targetLabel = `${value} → ${ip}`;
+
+                } catch (error) {
+                    console.error("DNS resolve error:", error);
+                    status.innerHTML = `❌ Ошибка DNS-запроса: ${error.message}`;
+                    status.className = "status error";
+                    return;
+                }
+            } else {
+                status.innerHTML = `⚠️ <b>${value}</b> не похоже ни на IP, ни на домен.`;
                 status.className = "status warning";
                 return;
             }
 
-            // Берём первый A-запись
-            const aRecord = dohData.Answer.find(r => r.type === 1);
-            if (!aRecord) {
-                status.innerHTML = `⚠️ У <b>${value}</b> нет A-записи (IPv4).<br><small>Возможно, только IPv6.</small>`;
-                status.className = "status warning";
-                return;
-            }
-
-            ip = aRecord.data;
-            targetLabel = `${value} → ${ip}`;
-
-        } catch (error) {
-            console.error("DNS resolve error:", error);
-            status.innerHTML = `❌ Ошибка DNS-запроса: ${error.message}`;
-            status.className = "status error";
-            return;
-        }
-    } else {
-        status.innerHTML = `⚠️ <b>${value}</b> не похоже ни на IP, ни на домен.`;
-        status.className = "status warning";
-        return;
-    }
-
-    // Шаг 3: запрашиваем Shodan по полученному IP
-    status.innerHTML = `📡 Проверяю <b>${targetLabel}</b> через Shodan...`;
-    status.className = "status";
-
-    try {
-        const shodanUrl = `https://internetdb.shodan.io/${ip}`;
-        const response = await fetch(`${WORKER_URL}/?url=${encodeURIComponent(shodanUrl)}`);
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.detail) {
-            status.innerHTML = `ℹ️ <b>${targetLabel}</b>: ${data.detail}`;
+            status.innerHTML = `📡 Проверяю <b>${targetLabel}</b> через Shodan...`;
             status.className = "status";
-            return;
-        }
 
-        const ports = data.ports || [];
-        const vulns = data.vulns || [];
-        const hostnames = data.hostnames || [];
-        const tags = data.tags || [];
+            try {
+                const shodanUrl = `https://internetdb.shodan.io/${ip}`;
+                const response = await fetch(`${WORKER_URL}/?url=${encodeURIComponent(shodanUrl)}`);
 
-        let msg = `📡 <b>${targetLabel}</b><br>`;
-        msg += `Портов: <b>${ports.length}</b>`;
-        if (ports.length > 0) {
-            msg += ` <small>(${ports.slice(0, 8).join(", ")}${ports.length > 8 ? "…" : ""})</small>`;
-        }
-        msg += `<br>Уязвимостей: <b>${vulns.length}</b>`;
-        if (vulns.length > 0) {
-            msg += ` <small>(${vulns.slice(0, 3).join(", ")}${vulns.length > 3 ? "…" : ""})</small>`;
-        }
-        if (hostnames.length > 0) {
-            msg += `<br>Hostname: <small>${hostnames.slice(0, 3).join(", ")}</small>`;
-        }
-        if (tags.length > 0) {
-            msg += `<br>Теги: <small>${tags.join(", ")}</small>`;
-        }
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
 
-        status.innerHTML = msg;
-        status.className = vulns.length > 0 ? "status error" : "status success";
+                const data = await response.json();
 
-    } catch (error) {
-        console.error("Shodan error:", error);
-        status.innerHTML = `❌ Ошибка Shodan: ${error.message}`;
-        status.className = "status error";
-    }
-}
+                if (data.detail) {
+                    status.innerHTML = `ℹ️ <b>${targetLabel}</b>: ${data.detail}`;
+                    status.className = "status";
+                    return;
+                }
 
-        // --- Заводские данные (ssid.ai через прокси) ---
-       // --- Заводские данные (через ssid.ai API) ---
-async function checkDefaults() {
-    const model = input.value.trim();
+                const ports = data.ports || [];
+                const vulns = data.vulns || [];
+                const hostnames = data.hostnames || [];
+                const tags = data.tags || [];
 
-    if (!model) {
-        status.textContent = "⚠️ Введите модель роутера (например, TP-Link Archer AX55)";
-        status.className = "status warning";
-        input.focus();
-        return;
-    }
+                let msg = `📡 <b>${targetLabel}</b><br>`;
+                msg += `Портов: <b>${ports.length}</b>`;
+                if (ports.length > 0) {
+                    msg += ` <small>(${ports.slice(0, 8).join(", ")}${ports.length > 8 ? "…" : ""})</small>`;
+                }
+                msg += `<br>Уязвимостей: <b>${vulns.length}</b>`;
+                if (vulns.length > 0) {
+                    msg += ` <small>(${vulns.slice(0, 3).join(", ")}${vulns.length > 3 ? "…" : ""})</small>`;
+                }
+                if (hostnames.length > 0) {
+                    msg += `<br>Hostname: <small>${hostnames.slice(0, 3).join(", ")}</small>`;
+                }
+                if (tags.length > 0) {
+                    msg += `<br>Теги: <small>${tags.join(", ")}</small>`;
+                }
 
-    status.innerHTML = `🎯 Ищу данные для <b>${model}</b>...`;
-    status.className = "status";
+                status.innerHTML = msg;
+                status.className = vulns.length > 0 ? "status error" : "status success";
 
-    // Разбиваем "TP-Link Archer AX55" на бренд и модель
-    const parts = model.split(/\s+/);
-    let brand = parts[0];
-    let modelName = parts.slice(1).join(" ");
+                addToHistory(value, "shodan");
 
-    // Если ввели одно слово — пытаемся угадать бренд
-    if (!modelName) {
-        const found = findBrand(model);
-        if (found) {
-            brand = found.brand;
-            modelName = model;
-        } else {
-            modelName = model;
-        }
-    }
-
-    // Запрос через прокси (ключ добавляется в воркере)
-    const apiUrl = `https://ssid.ai/api/v1/device?brand=${encodeURIComponent(brand)}&model=${encodeURIComponent(modelName)}`;
-    const proxyUrl = `${WORKER_URL}/?url=${encodeURIComponent(apiUrl)}`;
-
-    try {
-        const response = await fetch(proxyUrl);
-        const data = await response.json();
-
-        // Случай 1: 409 — модель неоднозначная, API вернул список кандидатов
-        if (response.status === 409 && data.candidates) {
-            let msg = `🤔 Модель неоднозначная. Нашлось несколько вариантов:<br>`;
-            data.candidates.forEach((c) => {
-                msg += `<a href="${c.url}" target="_blank" style="color:#a5b4fc">${c.slug}</a><br>`;
-            });
-            status.innerHTML = msg;
-            status.className = "status warning";
-            return;
-        }
-
-        // Случай 2: нашли данные
-        if (data && data.slug) {
-            let msg = `🎯 <b>${data.brand} ${data.modelName}</b><br>`;
-            if (data.defaultGatewayIp) msg += `IP входа: <code>${data.defaultGatewayIp}</code><br>`;
-            if (data.loginHost) msg += `Хост: <code>${data.loginHost}</code><br>`;
-            if (data.defaultUsername) msg += `Логин: <code>${data.defaultUsername}</code><br>`;
-            if (data.defaultPassword) msg += `Пароль: <code>${data.defaultPassword}</code><br>`;
-            if (data.credTypeMeaning) msg += `<small>${data.credTypeMeaning}</small><br>`;
-
-            if (data.url) {
-                msg += `<br><a href="${data.url}" target="_blank" style="color:#a5b4fc">Открыть на ssid.ai →</a>`;
+            } catch (error) {
+                console.error("Shodan error:", error);
+                status.innerHTML = `❌ Ошибка Shodan: ${error.message}`;
+                status.className = "status error";
             }
-            status.innerHTML = msg;
-            status.className = "status success";
-            return;
         }
 
-        // Случай 3: ничего не нашли
-        status.innerHTML = `ℹ️ Для <b>${model}</b> данных не найдено.<br><small>Попробуй ввести бренд и модель точнее.</small>`;
-        status.className = "status";
+        // --- Заводские данные (через ssid.ai API) ---
+        async function checkDefaults() {
+            const model = input.value.trim();
 
-    } catch (error) {
-        console.error("ssid.ai error:", error);
-        status.innerHTML = `❌ Ошибка запроса к ssid.ai: ${error.message}`;
-        status.className = "status error";
-    }
-}
+            if (!model) {
+                status.textContent = "⚠️ Введите модель роутера (например, TP-Link Archer AX55)";
+                status.className = "status warning";
+                input.focus();
+                return;
+            }
+
+            status.innerHTML = `🎯 Ищу данные для <b>${model}</b>...`;
+            status.className = "status";
+
+            const parts = model.split(/\s+/);
+            let brand = parts[0];
+            let modelName = parts.slice(1).join(" ");
+
+            if (!modelName) {
+                const found = findBrand(model);
+                if (found) {
+                    brand = found.brand;
+                    modelName = model;
+                } else {
+                    modelName = model;
+                }
+            }
+
+            const apiUrl = `https://ssid.ai/api/v1/device?brand=${encodeURIComponent(brand)}&model=${encodeURIComponent(modelName)}`;
+            const proxyUrl = `${WORKER_URL}/?url=${encodeURIComponent(apiUrl)}`;
+
+            try {
+                const response = await fetch(proxyUrl);
+                const data = await response.json();
+
+                if (response.status === 409 && data.candidates) {
+                    let msg = `🤔 Модель неоднозначная. Нашлось несколько вариантов:<br>`;
+                    data.candidates.forEach((c) => {
+                        msg += `<a href="${c.url}" target="_blank" style="color:#a5b4fc">${c.slug}</a><br>`;
+                    });
+                    status.innerHTML = msg;
+                    status.className = "status warning";
+                    return;
+                }
+
+                if (data && data.slug) {
+                    let msg = `🎯 <b>${data.brand} ${data.modelName}</b><br>`;
+                    if (data.defaultGatewayIp) msg += `IP входа: <code>${data.defaultGatewayIp}</code><br>`;
+                    if (data.loginHost) msg += `Хост: <code>${data.loginHost}</code><br>`;
+                    if (data.defaultUsername) msg += `Логин: <code>${data.defaultUsername}</code><br>`;
+                    if (data.defaultPassword) msg += `Пароль: <code>${data.defaultPassword}</code><br>`;
+                    if (data.credTypeMeaning) msg += `<small>${data.credTypeMeaning}</small><br>`;
+
+                    if (data.url) {
+                        msg += `<br><a href="${data.url}" target="_blank" style="color:#a5b4fc">Открыть на ssid.ai →</a>`;
+                    }
+                    status.innerHTML = msg;
+                    status.className = "status success";
+
+                    addToHistory(model, "ssid");
+                    return;
+                }
+
+                status.innerHTML = `ℹ️ Для <b>${model}</b> данных не найдено.<br><small>Попробуй ввести бренд и модель точнее.</small>`;
+                status.className = "status";
+
+            } catch (error) {
+                console.error("ssid.ai error:", error);
+                status.innerHTML = `❌ Ошибка запроса к ssid.ai: ${error.message}`;
+                status.className = "status error";
+            }
+        }
+
+        // --- История запросов ---
+        const STORAGE_KEY = "routerHistory";
+        const MAX_HISTORY = 20;
+
+        const historyList = document.getElementById("historyList");
+
+        function loadHistory() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                console.error("Ошибка чтения истории:", e);
+                return [];
+            }
+        }
+
+        function saveHistory(history) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+            } catch (e) {
+                console.error("Ошибка сохранения истории:", e);
+            }
+        }
+
+        function addToHistory(model, action) {
+            let history = loadHistory();
+
+            history = history.filter(item =>
+                item.model.toLowerCase() !== model.toLowerCase()
+            );
+
+            history.unshift({
+                model: model,
+                action: action,
+                time: Date.now()
+            });
+
+            if (history.length > MAX_HISTORY) {
+                history = history.slice(0, MAX_HISTORY);
+            }
+
+            saveHistory(history);
+            renderHistory();
+        }
+
+        function removeFromHistory(model, time) {
+            let history = loadHistory();
+            history = history.filter(item => !(item.model === model && item.time === time));
+            saveHistory(history);
+            renderHistory();
+        }
+
+        function clearHistory() {
+            if (!confirm("Удалить всю историю?")) return;
+            localStorage.removeItem(STORAGE_KEY);
+            renderHistory();
+        }
+
+        function replayHistory(model, action) {
+            input.value = model;
+            updateBrandLogo();
+
+            switch (action) {
+                case "dns":    searchIn("dns"); break;
+                case "mvideo": searchIn("mvideo"); break;
+                case "citilink": searchIn("citilink"); break;
+                case "ozon":   searchIn("ozon"); break;
+                case "all":    searchAll(); break;
+                case "shodan": checkShodan(); break;
+                case "ssid":   checkDefaults(); break;
+                case "pppoe":  searchGoogleSetup(); break;
+                default:       searchIn("dns");
+            }
+        }
+
+        function formatTime(timestamp) {
+            const diff = Date.now() - timestamp;
+            const min = Math.floor(diff / 60000);
+            const hour = Math.floor(diff / 3600000);
+            const day = Math.floor(diff / 86400000);
+
+            if (min < 1) return "только что";
+            if (min < 60) return `${min} мин назад`;
+            if (hour < 24) return `${hour} ч назад`;
+            if (day < 7) return `${day} дн назад`;
+
+            const d = new Date(timestamp);
+            return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+        }
+
+        const ACTION_LABELS = {
+            dns: "DNS",
+            mvideo: "М.Видео",
+            citilink: "Ситилинк",
+            ozon: "Ozon",
+            all: "Везде",
+            shodan: "Shodan",
+            ssid: "ssid.ai",
+            pppoe: "PPPoE"
+        };
+
+        function renderHistory() {
+            const history = loadHistory();
+            historyList.innerHTML = "";
+
+            if (history.length === 0) {
+                historyList.innerHTML = '<div class="history-empty">Пока пусто — что-нибудь найдите</div>';
+                return;
+            }
+
+            history.forEach(item => {
+                const row = document.createElement("div");
+                row.className = "history-item";
+
+                const modelSpan = document.createElement("span");
+                modelSpan.className = "history-model";
+                modelSpan.textContent = item.model;
+                modelSpan.title = "Нажмите, чтобы повторить";
+                modelSpan.onclick = () => replayHistory(item.model, item.action || "dns");
+
+                row.appendChild(modelSpan);
+
+                if (item.action && ACTION_LABELS[item.action]) {
+                    const actionSpan = document.createElement("span");
+                    actionSpan.className = "history-action";
+                    actionSpan.textContent = ACTION_LABELS[item.action];
+                    row.appendChild(actionSpan);
+                }
+
+                const timeSpan = document.createElement("span");
+                timeSpan.className = "history-time";
+                timeSpan.textContent = formatTime(item.time);
+
+                const removeBtn = document.createElement("button");
+                removeBtn.className = "remove-btn";
+                removeBtn.textContent = "×";
+                removeBtn.title = "Удалить";
+                removeBtn.onclick = () => removeFromHistory(item.model, item.time);
+
+                row.appendChild(timeSpan);
+                row.appendChild(removeBtn);
+                historyList.appendChild(row);
+            });
+        }
+
         // --- Слушатели ---
         input.addEventListener("input", updateBrandLogo);
 
@@ -797,6 +1064,10 @@ async function checkDefaults() {
                 searchIn("dns");
             }
         });
+
+        // --- Инициализация ---
+        renderHistory();
+        setInterval(renderHistory, 60000);
     </script>
 </body>
 </html>
