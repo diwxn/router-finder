@@ -163,55 +163,78 @@
             background: #1e40af;
         }
 
-        .status {
-            margin-top: 20px;
-            padding: 12px;
-            border-radius: 10px;
-            font-size: 14px;
-            text-align: center;
-            color: #a0a0b8;
-            background: #13131a;
-            border: 1px solid #2a2a35;
-            min-height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            word-break: break-word;
-            transition: all 0.3s;
-            line-height: 1.5;
-        }
+.status {
+    margin-top: 20px;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    text-align: center;
+    color: #a0a0b8;
+    background: #13131a;
+    border: 1px solid #2a2a35;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    word-break: break-word;      /* ← было break-all, стало мягче */
+    overflow-wrap: anywhere;     /* ← ломает длинные слова, если надо */
+    transition: all 0.3s;
+    line-height: 1.6;            /* ← чуть больше воздуха между строками */
+    flex-direction: column;      /* ← чтобы содержимое шло столбиком, а не наезжало */
+    gap: 4px;
+}
 
-        .status.success {
-            background: rgba(0, 200, 83, 0.1);
-            border-color: rgba(0, 200, 83, 0.4);
-            color: #4ade80;
-        }
+.status.success {
+    background: rgba(0, 200, 83, 0.1);
+    border-color: rgba(0, 200, 83, 0.4);
+    color: #4ade80;
+}
 
-        .status.warning {
-            background: rgba(255, 193, 7, 0.1);
-            border-color: rgba(255, 193, 7, 0.4);
-            color: #fbbf24;
-        }
+.status.warning {
+    background: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.4);
+    color: #fbbf24;
+}
 
-        .status.error {
-            background: rgba(239, 68, 68, 0.1);
-            border-color: rgba(239, 68, 68, 0.4);
-            color: #f87171;
-        }
+.status.error {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #f87171;
+}
 
-        .status code {
-            background: #0f0f14;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 13px;
-            color: #a5b4fc;
-            border: 1px solid #2a2a35;
-        }
+/* Тег <code> внутри статуса — не должен вылезать */
+.status code {
+    background: #0f0f14;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #a5b4fc;
+    border: 1px solid #2a2a35;
+    white-space: nowrap;         /* сам код не переносится */
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;     /* если совсем длинный — обрежется с … */
+    vertical-align: middle;
+}
 
-        .status small {
-            color: #8888a0;
-            font-size: 12px;
-        }
+.status small {
+    color: #8888a0;
+    font-size: 12px;
+    display: block;              /* ← уводит small на отдельную строку */
+    margin-top: 4px;
+}
+
+.status a {
+    color: #a5b4fc;
+    text-decoration: none;
+    display: inline-block;       /* ← чтобы ссылка не разрывалась посередине */
+    margin-top: 4px;
+}
+
+.status a:hover {
+    text-decoration: underline;
+}
 
         .hint {
             margin-top: 16px;
