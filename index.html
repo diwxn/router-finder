@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Поиск роутера</title>
+    <title>🔍 Поиск роутера</title>
 
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
 
@@ -52,7 +52,6 @@
             margin-bottom: 30px;
         }
 
-        /* Обёртка поля ввода + логотип */
         .input-wrapper {
             position: relative;
             display: flex;
@@ -63,7 +62,7 @@
         input[type="text"] {
             flex: 1;
             padding: 14px 18px;
-            padding-left: 56px; /* место под логотип */
+            padding-left: 56px;
             border: 2px solid #2a2a35;
             border-radius: 12px;
             font-size: 16px;
@@ -82,7 +81,6 @@
             background: #13131a;
         }
 
-        /* Логотип бренда */
         .brand-logo {
             position: absolute;
             left: 14px;
@@ -122,13 +120,17 @@
             transform: scale(0.97);
         }
 
+        button:disabled {
+            opacity: 0.5;
+            cursor: wait;
+        }
+
         .buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
         }
 
-        /* Сдержанные цвета кнопок */
         .btn-dns {
             background: #c2410c;
         }
@@ -153,6 +155,14 @@
             background: #0f766e;
         }
 
+        .btn-shodan {
+            background: #7c2d12;
+        }
+
+        .btn-ssid {
+            background: #1e40af;
+        }
+
         .status {
             margin-top: 20px;
             padding: 12px;
@@ -166,8 +176,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            word-break: break-all;
+            word-break: break-word;
             transition: all 0.3s;
+            line-height: 1.5;
         }
 
         .status.success {
@@ -180,6 +191,26 @@
             background: rgba(255, 193, 7, 0.1);
             border-color: rgba(255, 193, 7, 0.4);
             color: #fbbf24;
+        }
+
+        .status.error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #f87171;
+        }
+
+        .status code {
+            background: #0f0f14;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #a5b4fc;
+            border: 1px solid #2a2a35;
+        }
+
+        .status small {
+            color: #8888a0;
+            font-size: 12px;
         }
 
         .hint {
@@ -288,6 +319,12 @@
             </button>
         </div>
 
+        <div class="section-title">Диагностика</div>
+        <div class="buttons">
+            <button class="btn-shodan" onclick="checkShodan()">📡 Проверить IP (Shodan)</button>
+            <button class="btn-ssid" onclick="checkDefaults()">🎯 Заводские данные</button>
+        </div>
+
         <div class="status" id="status">Введите модель роутера и выберите действие</div>
 
         <p class="hint">
@@ -296,279 +333,370 @@
         </p>
     </div>
 
-  <script>
-    const SHOPS = {
-        dns: {
-            name: "DNS",
-            url: (q) => `https://www.dns-shop.ru/search/?q=${encodeURIComponent(q)}`
-        },
-        mvideo: {
-            name: "М.Видео",
-            url: (q) => `https://www.mvideo.ru/search?q=${encodeURIComponent(q)}`
-        },
-        citilink: {
-            name: "Ситилинк",
-            url: (q) => `https://www.citilink.ru/search/?text=${encodeURIComponent(q)}`
-        },
-        ozon: {
-            name: "Ozon",
-            url: (q) => `https://www.ozon.ru/search/?text=${encodeURIComponent(q)}`
-        }
-    };
+    <script>
+        // === НАСТРОЙКА ===
+        const WORKER_URL = "https://router-proxy.chlenyest.workers.dev";
+        const LOGOKIT_TOKEN = "pk_fr2d740c193a9983239c87";
 
-    // Известные бренды
-    const BRANDS = {
-        "tp-link": "tp-link.com",
-        "tplink": "tp-link.com",
-        "tp link": "tp-link.com",
-        "keenetic": "keenetic.com",
-        "kinetic": "keenetic.com",
-        "asus": "asus.com",
-        "xiaomi": "mi.com",
-        "mercusys": "mercusys.com",
-        "d-link": "dlink.com",
-        "dlink": "dlink.com",
-        "huawei": "huawei.com",
-        "zyxel": "zyxel.com",
-        "ubiquiti": "ui.com",
-        "mikrotik": "mikrotik.com",
-        "netgear": "netgear.com",
-        "tenda": "tenda.com",
-        "totolink": "totolink.net",
-        "linksys": "linksys.com",
-        "cisco": "cisco.com"
-    };
-
-    // 🃏 Шуточные исключения: триггер → бренд и домен
-    // Срабатывают первыми, до обычного поиска
-    const EASTER_EGGS = [
-        {
-            triggers: ["хуйня", "хуйня-роутер", "huynya", "huinya", "xuy"],
-            brand: "mikrotik",
-            domain: "mikrotik.com",
-            message: "MikroTik — тот самый роутер 😎"
-        }
-    ];
-
-    const LOGOKIT_TOKEN = "pk_fr2d740c193a9983239c87";
-
-    const input = document.getElementById("modelInput");
-    const status = document.getElementById("status");
-    const connType = document.getElementById("connType");
-    const brandLogo = document.getElementById("brandLogo");
-
-    let currentLogoUrl = "";
-
-    // --- Расстояние Левенштейна ---
-    function levenshtein(a, b) {
-        if (a === b) return 0;
-        if (a.length === 0) return b.length;
-        if (b.length === 0) return a.length;
-
-        const matrix = [];
-        for (let i = 0; i <= b.length; i++) matrix[i] = [i];
-        for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
-
-        for (let i = 1; i <= b.length; i++) {
-            for (let j = 1; j <= a.length; j++) {
-                const cost = b[i - 1] === a[j - 1] ? 0 : 1;
-                matrix[i][j] = Math.min(
-                    matrix[i - 1][j] + 1,
-                    matrix[i][j - 1] + 1,
-                    matrix[i - 1][j - 1] + cost
-                );
+        const SHOPS = {
+            dns: {
+                name: "DNS",
+                url: (q) => `https://www.dns-shop.ru/search/?q=${encodeURIComponent(q)}`
+            },
+            mvideo: {
+                name: "М.Видео",
+                url: (q) => `https://www.mvideo.ru/search?q=${encodeURIComponent(q)}`
+            },
+            citilink: {
+                name: "Ситилинк",
+                url: (q) => `https://www.citilink.ru/search/?text=${encodeURIComponent(q)}`
+            },
+            ozon: {
+                name: "Ozon",
+                url: (q) => `https://www.ozon.ru/search/?text=${encodeURIComponent(q)}`
             }
-        }
-        return matrix[b.length][a.length];
-    }
+        };
 
-    // --- Проверка шуточных исключений ---
-    function checkEasterEgg(modelText) {
-        const text = modelText.toLowerCase().trim();
+        const BRANDS = {
+            "tp-link": "tp-link.com",
+            "tplink": "tp-link.com",
+            "tp link": "tp-link.com",
+            "keenetic": "keenetic.com",
+            "kinetic": "keenetic.com",
+            "asus": "asus.com",
+            "xiaomi": "mi.com",
+            "mercusys": "mercusys.com",
+            "d-link": "dlink.com",
+            "dlink": "dlink.com",
+            "huawei": "huawei.com",
+            "zyxel": "zyxel.com",
+            "ubiquiti": "ui.com",
+            "mikrotik": "mikrotik.com",
+            "netgear": "netgear.com",
+            "tenda": "tenda.com",
+            "totolink": "totolink.net",
+            "linksys": "linksys.com",
+            "cisco": "cisco.com"
+        };
 
-        for (const egg of EASTER_EGGS) {
-            for (const trigger of egg.triggers) {
-                // Точное совпадение или начало строки
-                if (text === trigger || text.startsWith(trigger + " ")) {
-                    return egg;
-                }
-                // Нечёткое совпадение для опечаток
-                const firstWord = text.split(/[\s\-_]+/)[0];
-                if (levenshtein(firstWord, trigger) <= 1 && trigger.length > 3) {
-                    return egg;
+        const EASTER_EGGS = [
+            {
+                triggers: ["хуйня", "хуйня-роутер", "huynya", "huinya", "xuy"],
+                brand: "mikrotik",
+                domain: "mikrotik.com",
+                message: "MikroTik — тот самый роутер 😎"
+            }
+        ];
+
+        const input = document.getElementById("modelInput");
+        const status = document.getElementById("status");
+        const connType = document.getElementById("connType");
+        const brandLogo = document.getElementById("brandLogo");
+
+        let currentLogoUrl = "";
+
+        // --- Расстояние Левенштейна ---
+        function levenshtein(a, b) {
+            if (a === b) return 0;
+            if (a.length === 0) return b.length;
+            if (b.length === 0) return a.length;
+
+            const matrix = [];
+            for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+            for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+            for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                    const cost = b[i - 1] === a[j - 1] ? 0 : 1;
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j] + 1,
+                        matrix[i][j - 1] + 1,
+                        matrix[i - 1][j - 1] + cost
+                    );
                 }
             }
-        }
-        return null;
-    }
-
-    // --- Поиск ближайшего бренда ---
-    function findBrand(modelText) {
-        const text = modelText.toLowerCase().trim();
-
-        // 0. Шуточные исключения — раньше всех
-        const egg = checkEasterEgg(text);
-        if (egg) {
-            return {
-                brand: egg.brand,
-                domain: egg.domain,
-                exact: true,
-                easterEgg: true,
-                message: egg.message
-            };
+            return matrix[b.length][a.length];
         }
 
-        // 1. Точное совпадение по началу строки
-        for (const [brand, domain] of Object.entries(BRANDS)) {
-            if (text.startsWith(brand)) {
-                return { brand, domain, exact: true };
+        // --- Проверка шуточных исключений ---
+        function checkEasterEgg(modelText) {
+            const text = modelText.toLowerCase().trim();
+            for (const egg of EASTER_EGGS) {
+                for (const trigger of egg.triggers) {
+                    if (text === trigger || text.startsWith(trigger + " ")) {
+                        return egg;
+                    }
+                    const firstWord = text.split(/[\s\-_]+/)[0];
+                    if (levenshtein(firstWord, trigger) <= 1 && trigger.length > 3) {
+                        return egg;
+                    }
+                }
             }
+            return null;
         }
 
-        // 2. Нечёткий поиск по первому слову
-        const firstWord = text.split(/[\s\-_]+/)[0];
+        // --- Поиск ближайшего бренда ---
+        function findBrand(modelText) {
+            const text = modelText.toLowerCase().trim();
 
-        let best = null;
-        let bestDistance = Infinity;
-
-        for (const [brand, domain] of Object.entries(BRANDS)) {
-            const brandFirstWord = brand.split(/[\s\-_]+/)[0];
-            const distFull = levenshtein(firstWord, brand);
-            const distFirst = levenshtein(firstWord, brandFirstWord);
-            const dist = Math.min(distFull, distFirst);
-
-            if (dist < bestDistance) {
-                bestDistance = dist;
-                best = { brand, domain, distance: dist };
+            const egg = checkEasterEgg(text);
+            if (egg) {
+                return {
+                    brand: egg.brand,
+                    domain: egg.domain,
+                    exact: true,
+                    easterEgg: true,
+                    message: egg.message
+                };
             }
+
+            for (const [brand, domain] of Object.entries(BRANDS)) {
+                if (text.startsWith(brand)) {
+                    return { brand, domain, exact: true };
+                }
+            }
+
+            const firstWord = text.split(/[\s\-_]+/)[0];
+            let best = null;
+            let bestDistance = Infinity;
+
+            for (const [brand, domain] of Object.entries(BRANDS)) {
+                const brandFirstWord = brand.split(/[\s\-_]+/)[0];
+                const distFull = levenshtein(firstWord, brand);
+                const distFirst = levenshtein(firstWord, brandFirstWord);
+                const dist = Math.min(distFull, distFirst);
+
+                if (dist < bestDistance) {
+                    bestDistance = dist;
+                    best = { brand, domain, distance: dist };
+                }
+            }
+
+            const threshold = firstWord.length <= 4 ? 1 : 3;
+
+            if (best && bestDistance <= threshold) {
+                return { ...best, exact: false };
+            }
+            return null;
         }
 
-        const threshold = firstWord.length <= 4 ? 1 : 3;
+        // --- Обновление логотипа ---
+        function updateBrandLogo() {
+            const model = input.value.trim();
+            if (!model) {
+                brandLogo.classList.remove("visible");
+                currentLogoUrl = "";
+                return;
+            }
 
-        if (best && bestDistance <= threshold) {
-            return { ...best, exact: false };
+            const found = findBrand(model);
+            if (!found) {
+                brandLogo.classList.remove("visible");
+                currentLogoUrl = "";
+                return;
+            }
+
+            const logoUrl = `https://img.logokit.com/${found.domain}?token=${LOGOKIT_TOKEN}`;
+            if (logoUrl === currentLogoUrl) return;
+            currentLogoUrl = logoUrl;
+
+            brandLogo.onload = () => brandLogo.classList.add("visible");
+            brandLogo.onerror = () => brandLogo.classList.remove("visible");
+            brandLogo.src = logoUrl;
         }
 
-        return null;
-    }
+        // --- Поиск в конкретном магазине ---
+        function searchIn(shopKey) {
+            const model = input.value.trim();
+            if (!model) {
+                status.textContent = "⚠️ Пожалуйста, введите модель роутера";
+                status.className = "status warning";
+                input.focus();
+                return;
+            }
 
-    // --- Обновление логотипа ---
-    function updateBrandLogo() {
-        const model = input.value.trim();
+            const shop = SHOPS[shopKey];
+            const url = shop.url(model);
+            const found = findBrand(model);
 
-        if (!model) {
-            brandLogo.classList.remove("visible");
-            currentLogoUrl = "";
-            return;
-        }
-
-        const found = findBrand(model);
-
-        if (!found) {
-            brandLogo.classList.remove("visible");
-            currentLogoUrl = "";
-            return;
-        }
-
-        const logoUrl = `https://img.logokit.com/${found.domain}?token=${LOGOKIT_TOKEN}`;
-
-        if (logoUrl === currentLogoUrl) return;
-        currentLogoUrl = logoUrl;
-
-        // Если сработало шуточное исключение — выводим сообщение в статус
-        if (found.easterEgg) {
-            status.innerHTML = `😎 <b>${found.message}</b>`;
+            if (found && found.easterEgg) {
+                status.innerHTML = `😎 <b>${found.message}</b> — ищу в ${shop.name}...`;
+            } else {
+                status.innerHTML = `✅ Открываю поиск в <b>${shop.name}</b>...`;
+            }
             status.className = "status success";
+            window.open(url, "_blank");
         }
 
-        brandLogo.onload = () => brandLogo.classList.add("visible");
-        brandLogo.onerror = () => brandLogo.classList.remove("visible");
-        brandLogo.src = logoUrl;
-    }
+        // --- Поиск во всех магазинах ---
+        function searchAll() {
+            const model = input.value.trim();
+            if (!model) {
+                status.textContent = "⚠️ Пожалуйста, введите модель роутера";
+                status.className = "status warning";
+                input.focus();
+                return;
+            }
 
-    // --- Поиск в конкретном магазине ---
-    function searchIn(shopKey) {
-        const model = input.value.trim();
+            const found = findBrand(model);
+            if (found && found.easterEgg) {
+                status.innerHTML = `😎 <b>${found.message}</b> — ищу везде...`;
+            } else {
+                status.innerHTML = `🔎 Открываю поиск во <b>всех магазинах</b>...`;
+            }
+            status.className = "status success";
 
-        if (!model) {
-            status.textContent = "⚠️ Пожалуйста, введите модель роутера";
-            status.className = "status warning";
-            input.focus();
-            return;
+            Object.values(SHOPS).forEach((shop, index) => {
+                setTimeout(() => {
+                    window.open(shop.url(model), "_blank");
+                }, index * 150);
+            });
         }
 
-        const shop = SHOPS[shopKey];
-        const url = shop.url(model);
+        // --- Настройка подключения в Google ---
+        function searchGoogleSetup() {
+            const model = input.value.trim();
+            const type = connType.value;
 
-        const found = findBrand(model);
-        if (found && found.easterEgg) {
-            status.innerHTML = `😎 <b>${found.message}</b> — ищу в ${shop.name}...`;
-        } else {
-            status.innerHTML = `✅ Открываю поиск в <b>${shop.name}</b>...`;
-        }
-        status.className = "status success";
+            if (!model) {
+                status.textContent = "⚠️ Введите модель роутера для поиска настроек";
+                status.className = "status warning";
+                input.focus();
+                return;
+            }
 
-        window.open(url, "_blank");
-    }
+            const query = `${model} настройка ${type}`;
+            const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
 
-    // --- Поиск во всех магазинах сразу ---
-    function searchAll() {
-        const model = input.value.trim();
-
-        if (!model) {
-            status.textContent = "⚠️ Пожалуйста, введите модель роутера";
-            status.className = "status warning";
-            input.focus();
-            return;
+            status.innerHTML = `🛠 Ищу настройку <b>${type}</b> для <b>${model}</b>...`;
+            status.className = "status success";
+            window.open(url, "_blank");
         }
 
-        const found = findBrand(model);
-        if (found && found.easterEgg) {
-            status.innerHTML = `😎 <b>${found.message}</b> — ищу везде...`;
-        } else {
-            status.innerHTML = `🔎 Открываю поиск во <b>всех магазинах</b>...`;
-        }
-        status.className = "status success";
+        // --- Shodan InternetDB ---
+        async function checkShodan() {
+            const value = input.value.trim();
 
-        Object.values(SHOPS).forEach((shop, index) => {
-            setTimeout(() => {
-                window.open(shop.url(model), "_blank");
-            }, index * 150);
+            if (!value) {
+                status.textContent = "⚠️ Введите IP-адрес для проверки";
+                status.className = "status warning";
+                input.focus();
+                return;
+            }
+
+            // Проверка на IP
+            const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+            if (!ipRegex.test(value)) {
+                status.innerHTML = `⚠️ <b>${value}</b> не похоже на IP-адрес.<br><small>Введите IP (например, 8.8.8.8) или сначала найдите свой IP.</small>`;
+                status.className = "status warning";
+                return;
+            }
+
+            status.innerHTML = `📡 Проверяю <b>${value}</b> через Shodan...`;
+            status.className = "status";
+
+            try {
+                const url = `${WORKER_URL}/?url=${encodeURIComponent("https://internetdb.shodan.io/" + value)}`;
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.detail) {
+                    // Shodan вернул сообщение об ошибке (например, "No information available")
+                    status.innerHTML = `ℹ️ <b>${value}</b>: ${data.detail}`;
+                    status.className = "status";
+                    return;
+                }
+
+                const ports = data.ports || [];
+                const vulns = data.vulns || [];
+                const hostnames = data.hostnames || [];
+                const tags = data.tags || [];
+
+                let msg = `📡 <b>${value}</b><br>`;
+                msg += `Портов: <b>${ports.length}</b>`;
+                if (ports.length > 0) msg += ` <small>(${ports.slice(0, 8).join(", ")}${ports.length > 8 ? "…" : ""})</small>`;
+                msg += `<br>Уязвимостей: <b>${vulns.length}</b>`;
+                if (vulns.length > 0) msg += ` <small>(${vulns.slice(0, 3).join(", ")}${vulns.length > 3 ? "…" : ""})</small>`;
+
+                if (hostnames.length > 0) msg += `<br>Hostname: <small>${hostnames.slice(0, 3).join(", ")}</small>`;
+                if (tags.length > 0) msg += `<br>Теги: <small>${tags.join(", ")}</small>`;
+
+                status.innerHTML = msg;
+                status.className = vulns.length > 0 ? "status error" : "status success";
+
+            } catch (error) {
+                console.error("Shodan error:", error);
+                status.innerHTML = `❌ Ошибка Shodan: ${error.message}`;
+                status.className = "status error";
+            }
+        }
+
+        // --- Заводские данные (ssid.ai через прокси) ---
+        async function checkDefaults() {
+            const model = input.value.trim();
+
+            if (!model) {
+                status.textContent = "⚠️ Введите модель роутера (например, TP-Link Archer AX55)";
+                status.className = "status warning";
+                input.focus();
+                return;
+            }
+
+            status.innerHTML = `🎯 Ищу заводские данные для <b>${model}</b>...`;
+            status.className = "status";
+
+            // ssid.ai использует MCP, не REST. Пробуем их публичный эндпоинт.
+            // Если не сработает — покажем сообщение с ссылкой на ssid.ai
+            const targetUrl = `https://ssid.ai/api/mcp/lookup?query=${encodeURIComponent(model)}`;
+
+            try {
+                const url = `${WORKER_URL}/?url=${encodeURIComponent(targetUrl)}`;
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data && (data.defaultGatewayIp || data.loginHost)) {
+                    let msg = `🎯 <b>${data.brand || ""} ${data.modelName || model}</b><br>`;
+                    if (data.defaultGatewayIp) msg += `IP входа: <code>${data.defaultGatewayIp}</code><br>`;
+                    if (data.loginHost) msg += `Хост: <code>${data.loginHost}</code><br>`;
+                    if (data.defaultUsername) msg += `Логин: <code>${data.defaultUsername}</code><br>`;
+                    if (data.defaultPassword) msg += `Пароль: <code>${data.defaultPassword}</code><br>`;
+                    if (data.credTypeMeaning) msg += `<small>${data.credTypeMeaning}</small><br>`;
+                    if (data.resetSteps) msg += `<small>Сброс: ${data.resetSteps}</small>`;
+                    status.innerHTML = msg;
+                    status.className = "status success";
+                } else {
+                    status.innerHTML = `ℹ️ Заводские данные для <b>${model}</b> не найдены.<br><small>Проверь модель или зайди на <a href="https://ssid.ai" target="_blank" style="color:#a5b4fc">ssid.ai</a> вручную.</small>`;
+                    status.className = "status";
+                }
+
+            } catch (error) {
+                console.error("ssid.ai error:", error);
+                status.innerHTML = `⚠️ Не удалось получить данные ssid.ai.<br><small>Сервис может не отдавать данные через этот эндпоинт. Проверь: <a href="https://ssid.ai" target="_blank" style="color:#a5b4fc">ssid.ai</a></small>`;
+                status.className = "status warning";
+            }
+        }
+
+        // --- Слушатели ---
+        input.addEventListener("input", updateBrandLogo);
+
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && e.ctrlKey) {
+                e.preventDefault();
+                searchAll();
+            } else if (e.key === "Enter") {
+                searchIn("dns");
+            }
         });
-    }
-
-    // --- Поиск настройки подключения в Google ---
-    function searchGoogleSetup() {
-        const model = input.value.trim();
-        const type = connType.value;
-
-        if (!model) {
-            status.textContent = "⚠️ Введите модель роутера для поиска настроек";
-            status.className = "status warning";
-            input.focus();
-            return;
-        }
-
-        const query = `${model} настройка ${type}`;
-        const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-
-        status.innerHTML = `🛠 Ищу настройку <b>${type}</b> для <b>${model}</b>...`;
-        status.className = "status success";
-
-        window.open(url, "_blank");
-    }
-
-    // --- Слушатели ---
-    input.addEventListener("input", updateBrandLogo);
-
-    input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && e.ctrlKey) {
-            e.preventDefault();
-            searchAll();
-        } else if (e.key === "Enter") {
-            searchIn("dns");
-        }
-    });
-</script>
+    </script>
 </body>
 </html>
