@@ -296,7 +296,7 @@
         </p>
     </div>
 
-   <script>
+  <script>
     const SHOPS = {
         dns: {
             name: "DNS",
@@ -316,7 +316,7 @@
         }
     };
 
-    // Известные бренды: ключ — как писать, значение — домен
+    // Известные бренды
     const BRANDS = {
         "tp-link": "tp-link.com",
         "tplink": "tp-link.com",
@@ -339,6 +339,17 @@
         "cisco": "cisco.com"
     };
 
+    // 🃏 Шуточные исключения: триггер → бренд и домен
+    // Срабатывают первыми, до обычного поиска
+    const EASTER_EGGS = [
+        {
+            triggers: ["хуйня", "хуйня-роутер", "huynya", "huinya", "xuy"],
+            brand: "mikrotik",
+            domain: "mikrotik.com",
+            message: "MikroTik — тот самый роутер 😎"
+        }
+    ];
+
     const LOGOKIT_TOKEN = "pk_fr2d740c193a9983239c87";
 
     const input = document.getElementById("modelInput");
@@ -349,57 +360,79 @@
     let currentLogoUrl = "";
 
     // --- Расстояние Левенштейна ---
-    // Показывает, сколько правок нужно, чтобы превратить одну строку в другую
     function levenshtein(a, b) {
         if (a === b) return 0;
         if (a.length === 0) return b.length;
         if (b.length === 0) return a.length;
 
         const matrix = [];
-
-        for (let i = 0; i <= b.length; i++) {
-            matrix[i] = [i];
-        }
-        for (let j = 0; j <= a.length; j++) {
-            matrix[0][j] = j;
-        }
+        for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+        for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
 
         for (let i = 1; i <= b.length; i++) {
             for (let j = 1; j <= a.length; j++) {
                 const cost = b[i - 1] === a[j - 1] ? 0 : 1;
                 matrix[i][j] = Math.min(
-                    matrix[i - 1][j] + 1,      // удаление
-                    matrix[i][j - 1] + 1,      // вставка
-                    matrix[i - 1][j - 1] + cost // замена
+                    matrix[i - 1][j] + 1,
+                    matrix[i][j - 1] + 1,
+                    matrix[i - 1][j - 1] + cost
                 );
             }
         }
-
         return matrix[b.length][a.length];
+    }
+
+    // --- Проверка шуточных исключений ---
+    function checkEasterEgg(modelText) {
+        const text = modelText.toLowerCase().trim();
+
+        for (const egg of EASTER_EGGS) {
+            for (const trigger of egg.triggers) {
+                // Точное совпадение или начало строки
+                if (text === trigger || text.startsWith(trigger + " ")) {
+                    return egg;
+                }
+                // Нечёткое совпадение для опечаток
+                const firstWord = text.split(/[\s\-_]+/)[0];
+                if (levenshtein(firstWord, trigger) <= 1 && trigger.length > 3) {
+                    return egg;
+                }
+            }
+        }
+        return null;
     }
 
     // --- Поиск ближайшего бренда ---
     function findBrand(modelText) {
         const text = modelText.toLowerCase().trim();
 
-        // Сначала — точное совпадение по началу строки
+        // 0. Шуточные исключения — раньше всех
+        const egg = checkEasterEgg(text);
+        if (egg) {
+            return {
+                brand: egg.brand,
+                domain: egg.domain,
+                exact: true,
+                easterEgg: true,
+                message: egg.message
+            };
+        }
+
+        // 1. Точное совпадение по началу строки
         for (const [brand, domain] of Object.entries(BRANDS)) {
             if (text.startsWith(brand)) {
                 return { brand, domain, exact: true };
             }
         }
 
-        // Потом — нечёткий поиск по первому слову
-        // Берём первое слово модели, чтобы не путать с номером модели
+        // 2. Нечёткий поиск по первому слову
         const firstWord = text.split(/[\s\-_]+/)[0];
 
         let best = null;
         let bestDistance = Infinity;
 
         for (const [brand, domain] of Object.entries(BRANDS)) {
-            // Сравниваем и с полным брендом, и с первым словом бренда
             const brandFirstWord = brand.split(/[\s\-_]+/)[0];
-
             const distFull = levenshtein(firstWord, brand);
             const distFirst = levenshtein(firstWord, brandFirstWord);
             const dist = Math.min(distFull, distFirst);
@@ -410,8 +443,6 @@
             }
         }
 
-        // Порог: если разница больше 3 символов — считаем, что бренд не угадан
-        // Порог зависит от длины: для коротких слов — строже
         const threshold = firstWord.length <= 4 ? 1 : 3;
 
         if (best && bestDistance <= threshold) {
@@ -444,9 +475,10 @@
         if (logoUrl === currentLogoUrl) return;
         currentLogoUrl = logoUrl;
 
-        // Показываем подсказку, если бренд был угадан нечётко
-        if (!found.exact) {
-            console.log(`Бренд «${found.brand}» определён по совпадению (расстояние ${found.distance})`);
+        // Если сработало шуточное исключение — выводим сообщение в статус
+        if (found.easterEgg) {
+            status.innerHTML = `😎 <b>${found.message}</b>`;
+            status.className = "status success";
         }
 
         brandLogo.onload = () => brandLogo.classList.add("visible");
@@ -468,7 +500,12 @@
         const shop = SHOPS[shopKey];
         const url = shop.url(model);
 
-        status.innerHTML = `✅ Открываю поиск в <b>${shop.name}</b>...`;
+        const found = findBrand(model);
+        if (found && found.easterEgg) {
+            status.innerHTML = `😎 <b>${found.message}</b> — ищу в ${shop.name}...`;
+        } else {
+            status.innerHTML = `✅ Открываю поиск в <b>${shop.name}</b>...`;
+        }
         status.className = "status success";
 
         window.open(url, "_blank");
@@ -485,7 +522,12 @@
             return;
         }
 
-        status.innerHTML = `🔎 Открываю поиск во <b>всех магазинах</b>...`;
+        const found = findBrand(model);
+        if (found && found.easterEgg) {
+            status.innerHTML = `😎 <b>${found.message}</b> — ищу везде...`;
+        } else {
+            status.innerHTML = `🔎 Открываю поиск во <b>всех магазинах</b>...`;
+        }
         status.className = "status success";
 
         Object.values(SHOPS).forEach((shop, index) => {
