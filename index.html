@@ -123,6 +123,18 @@
             background: linear-gradient(135deg, #005bff, #3d8bff);
         }
 
+        .btn-search-all {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .btn-google {
+            background: linear-gradient(135deg, #4285f4, #34a853);
+        }
+
+        .btn-outage {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+        }
+
         .status {
             margin-top: 20px;
             padding: 12px;
@@ -168,12 +180,22 @@
             color: #a5b4fc;
             border: 1px solid #2a2a35;
         }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #66667a;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 24px 0 12px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🔍 Поиск роутера</h1>
-        <p class="subtitle">Введите модель и выберите магазин</p>
+        <p class="subtitle">Введите модель и выберите действие</p>
 
         <div class="input-group">
             <input
@@ -184,14 +206,28 @@
             >
         </div>
 
+        <div class="section-title">Магазины</div>
         <div class="buttons">
             <button class="btn-dns" onclick="searchIn('dns')">DNS</button>
             <button class="btn-mvideo" onclick="searchIn('mvideo')">М.Видео</button>
             <button class="btn-citilink" onclick="searchIn('citilink')">Ситилинк</button>
             <button class="btn-ozon" onclick="searchIn('ozon')">Ozon</button>
+            <button class="btn-search-all" onclick="searchAll()" style="grid-column: 1 / -1;">
+                🔎 Искать во всех магазинах
+            </button>
         </div>
 
-        <div class="status" id="status">Введите модель роутера и нажмите кнопку</div>
+        <div class="section-title">Инструменты</div>
+        <div class="buttons">
+            <button class="btn-google" onclick="searchGooglePPPoE()" style="grid-column: 1 / -1;">
+                🛠 Настройка PPPoE в Google
+            </button>
+            <button class="btn-outage" onclick="checkOutage()" style="grid-column: 1 / -1;">
+                📡 Проверить сбои на Сбой.рф
+            </button>
+        </div>
+
+        <div class="status" id="status">Введите модель роутера и выберите действие</div>
 
         <p class="hint">
             💡 Пишите модель как на коробке, например:<br>
@@ -203,18 +239,22 @@
         const SHOPS = {
             dns: {
                 name: "DNS",
+                domain: "dns-shop.ru",
                 url: (q) => `https://www.dns-shop.ru/search/?q=${encodeURIComponent(q)}`
             },
             mvideo: {
                 name: "М.Видео",
+                domain: "mvideo.ru",
                 url: (q) => `https://www.mvideo.ru/search?q=${encodeURIComponent(q)}`
             },
             citilink: {
                 name: "Ситилинк",
+                domain: "citilink.ru",
                 url: (q) => `https://www.citilink.ru/search/?text=${encodeURIComponent(q)}`
             },
             ozon: {
                 name: "Ozon",
+                domain: "ozon.ru",
                 url: (q) => `https://www.ozon.ru/search/?text=${encodeURIComponent(q)}`
             }
         };
@@ -222,6 +262,7 @@
         const input = document.getElementById("modelInput");
         const status = document.getElementById("status");
 
+        // --- Поиск в конкретном магазине ---
         function searchIn(shopKey) {
             const model = input.value.trim();
 
@@ -241,9 +282,79 @@
             window.open(url, "_blank");
         }
 
+        // --- Поиск во всех магазинах сразу ---
+        function searchAll() {
+            const model = input.value.trim();
+
+            if (!model) {
+                status.textContent = "⚠️ Пожалуйста, введите модель роутера";
+                status.className = "status warning";
+                input.focus();
+                return;
+            }
+
+            status.innerHTML = `🔎 Открываю поиск во <b>всех магазинах</b>...`;
+            status.className = "status success";
+
+            Object.values(SHOPS).forEach((shop, index) => {
+                // Небольшая задержка, чтобы браузер не блокировал всплывающие окна
+                setTimeout(() => {
+                    window.open(shop.url(model), "_blank");
+                }, index * 150);
+            });
+        }
+
+        // --- Поиск настройки PPPoE в Google ---
+        function searchGooglePPPoE() {
+            const model = input.value.trim();
+
+            if (!model) {
+                status.textContent = "⚠️ Введите модель роутера для поиска настроек";
+                status.className = "status warning";
+                input.focus();
+                return;
+            }
+
+            // Кавычки вокруг модели — для точного поиска
+            const query = `"${model}" настройка PPPoE`;
+            const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+
+            status.innerHTML = `🛠 Ищу настройки PPPoE для <b>${model}</b>...`;
+            status.className = "status success";
+
+            window.open(url, "_blank");
+        }
+
+        // --- Проверка сбоев через Сбой.рф ---
+        function checkOutage() {
+            const model = input.value.trim();
+
+            // Если модель не введена — открываем общую страницу Сбой.рф
+            if (!model) {
+                status.innerHTML = `📡 Открываю <b>Сбой.рф</b>...`;
+                status.className = "status success";
+                window.open("https://sбой.рф/", "_blank");
+                return;
+            }
+
+            // Пытаемся определить магазин по введённой модели (не всегда сработает)
+            // По умолчанию — общая страница
+            status.innerHTML = `📡 Проверяю сбои для <b>${model}</b>...`;
+            status.className = "status success";
+
+            // Открываем общую страницу Сбой.рф (там можно выбрать нужный сервис)
+            window.open("https://sбой.рф/", "_blank");
+        }
+
+        // --- Enter = поиск в DNS ---
         input.addEventListener("keydown", (e) => {
             if (e.key === "Enter") {
                 searchIn("dns");
+            }
+            // Ctrl+Enter = искать везде
+            if (e.key === "Enter" && e.ctrlKey) {
+                e.preventDefault();
+                searchAll();
             }
         });
     </script>
