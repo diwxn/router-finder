@@ -93,10 +93,66 @@
             border-radius: 6px;
             background: #fff;
             padding: 3px;
+            z-index: 2;
         }
 
         .brand-logo.visible {
             opacity: 1;
+        }
+
+        /* Подсказки под полем */
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 6px;
+            background: #1a1a22;
+            border: 1px solid #2a2a35;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            overflow: hidden;
+            display: none;
+        }
+
+        .suggestions.visible {
+            display: block;
+        }
+
+        .suggestion-item {
+            padding: 10px 16px;
+            font-size: 14px;
+            color: #e8e8ec;
+            cursor: pointer;
+            transition: background 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .suggestion-item:hover,
+        .suggestion-item.active {
+            background: #2a2a35;
+            color: #a5b4fc;
+        }
+
+        .suggestion-item .label {
+            font-size: 11px;
+            color: #66667a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: auto;
+        }
+
+        .suggestion-item.joke {
+            color: #fbbf24;
+        }
+
+        .suggestion-item.joke:hover,
+        .suggestion-item.joke.active {
+            background: rgba(251, 191, 36, 0.1);
+            color: #fbbf24;
         }
 
         button {
@@ -430,8 +486,10 @@
                 type="text"
                 id="modelInput"
                 placeholder="Например: TP-Link Archer AX55"
+                autocomplete="off"
                 autofocus
             >
+            <div class="suggestions" id="suggestions"></div>
         </div>
 
         <div class="section-title">Магазины</div>
@@ -535,12 +593,50 @@
             }
         ];
 
+        // --- База популярных моделей для автодополнения ---
+        const MODELS = {
+            "keenetic": [
+                "Giga", "Giga KN-1011", "Hopper", "Hopper KN-3810",
+                "Extra", "Extra KN-1710", "Start", "Start KN-1110",
+                "Speedster", "Speedster KN-3010", "Air", "Air KN-1610",
+                "Viva", "Viva KN-1910", "Ultra", "Ultra KN-1810",
+                "Peak", "Peak KN-2710", "Titan", "Titan KN-2210"
+            ],
+            "tp-link": [
+                "Archer AX55", "Archer AX73", "Archer AX21",
+                "Archer AX10", "Archer C6", "Archer C80",
+                "Archer AX6000", "Archer AX11000",
+                "Deco X20", "Deco X60", "Deco M4", "Deco M5"
+            ],
+            "tplink": [
+                "Archer AX55", "Archer AX73", "Archer AX21",
+                "Archer C6", "Deco X60"
+            ],
+            "asus": [
+                "RT-AX88U", "RT-AX86U", "RT-AX58U", "RT-AX56U",
+                "RT-AC86U", "RT-AC68U", "RT-AC66U",
+                "ZenWiFi AX", "ZenWiFi XT8",
+                "ROG Rapture GT-AX11000"
+            ],
+            "xiaomi": [
+                "Router AX6000", "Router AX3000", "Router AX1800",
+                "Router 4A", "Router 4C", "Mi Router 3G", "Redmi AX6"
+            ],
+            "mikrotik": [
+                "hAP ac2", "hAP ac3", "hAP ax2", "hAP ax3",
+                "RB4011", "RB5009", "CRS326", "CRS328",
+                "Chateau LTE12", "Chateau 5G"
+            ]
+        };
+
         const input = document.getElementById("modelInput");
         const status = document.getElementById("status");
         const connType = document.getElementById("connType");
         const brandLogo = document.getElementById("brandLogo");
+        const suggestionsBox = document.getElementById("suggestions");
 
         let currentLogoUrl = "";
+        let activeSuggestionIndex = -1;
 
         // --- Расстояние Левенштейна ---
         function levenshtein(a, b) {
@@ -582,7 +678,175 @@
             return null;
         }
 
-        // --- Поиск ближайшего бренда ---
+        // --- Определение канонического бренда ---
+        function getCanonicalBrand(inputText) {
+            const text = inputText.toLowerCase().trim();
+            if (!text) return null;
+
+            const firstWord = text.split(/[\s\-_]+/)[0];
+
+            for (const brand of Object.keys(BRANDS)) {
+                if (text.startsWith(brand)) return brand;
+            }
+
+            let best = null;
+            let bestDist = Infinity;
+            for (const brand of Object.keys(BRANDS)) {
+                const brandFirstWord = brand.split(/[\s\-_]+/)[0];
+                const dist = Math.min(
+                    levenshtein(firstWord, brand),
+                    levenshtein(firstWord, brandFirstWord)
+                );
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    best = brand;
+                }
+            }
+
+            const threshold = firstWord.length <= 4 ? 1 : 3;
+            return bestDist <= threshold ? best : null;
+        }
+
+        // --- Определение канонической модели ---
+        function getCanonicalModel(brandKey, modelPart) {
+            if (!brandKey || !modelPart) return null;
+
+            let key = brandKey.toLowerCase();
+            if (!MODELS[key] && MODELS[key.replace(/-/g, "")]) {
+                key = key.replace(/-/g, "");
+            }
+            if (!MODELS[key]) return null;
+
+            const text = modelPart.toLowerCase().trim();
+
+            let best = null;
+            let bestDist = Infinity;
+
+            for (const model of MODELS[key]) {
+                const modelFirstWords = model.toLowerCase().split(/\s+/).slice(0, 2).join(" ");
+                const inputFirstWords = text.split(/\s+/).slice(0, 2).join(" ");
+
+                const distShort = levenshtein(text.split(/\s+/)[0], model.toLowerCase().split(/\s+/)[0]);
+                const distFull = levenshtein(inputFirstWords, modelFirstWords);
+                const dist = Math.min(distShort, distFull);
+
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    best = model;
+                }
+            }
+
+            const firstWord = text.split(/\s+/)[0];
+            const threshold = firstWord.length <= 4 ? 1 : 2;
+
+            return bestDist <= threshold ? best : null;
+        }
+
+        // --- Красивое отображение бренда ---
+        function prettyBrand(brandKey) {
+            return brandKey
+                .split("-")
+                .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+                .join("-");
+        }
+
+        // --- Обновление подсказок ---
+        function updateSuggestions() {
+            const value = input.value.trim();
+            suggestionsBox.innerHTML = "";
+            suggestionsBox.classList.remove("visible");
+            activeSuggestionIndex = -1;
+
+            if (!value) return;
+
+            // 0. Шуточные исключения — раньше всего
+            const egg = checkEasterEgg(value);
+            if (egg) {
+                showSuggestion("MikroTik", "шутка", true);
+                return;
+            }
+
+            const parts = value.split(/\s+/);
+            const firstWord = parts[0];
+            const rest = parts.slice(1).join(" ");
+            const brandKey = getCanonicalBrand(value);
+
+            // 1. Бренд + остаток → ищем модель (автоисправление)
+            if (brandKey && rest) {
+                const canonicalModel = getCanonicalModel(brandKey, rest);
+                if (canonicalModel) {
+                    const suggested = `${prettyBrand(brandKey)} ${canonicalModel}`;
+                    if (suggested.toLowerCase() !== value.toLowerCase()) {
+                        showSuggestion(suggested, "автоисправление");
+                    }
+                }
+            }
+            // 2. Только бренд → показываем популярные модели
+            else if (brandKey && !rest && value.length >= 3) {
+                let key = brandKey.toLowerCase();
+                if (!MODELS[key] && MODELS[key.replace(/-/g, "")]) {
+                    key = key.replace(/-/g, "");
+                }
+                const models = MODELS[key];
+                if (models) {
+                    models.slice(0, 5).forEach(model => {
+                        showSuggestion(`${prettyBrand(brandKey)} ${model}`, "модель");
+                    });
+                }
+            }
+        }
+
+        function showSuggestion(text, label, isJoke = false) {
+            const item = document.createElement("div");
+            item.className = "suggestion-item" + (isJoke ? " joke" : "");
+
+            const textSpan = document.createElement("span");
+            textSpan.textContent = text;
+
+            const labelSpan = document.createElement("span");
+            labelSpan.className = "label";
+            labelSpan.textContent = label;
+
+            item.appendChild(textSpan);
+            item.appendChild(labelSpan);
+
+            item.onclick = () => {
+                input.value = text;
+                suggestionsBox.classList.remove("visible");
+                activeSuggestionIndex = -1;
+                updateBrandLogo();
+                input.focus();
+            };
+
+            suggestionsBox.appendChild(item);
+            suggestionsBox.classList.add("visible");
+        }
+
+        function navigateSuggestions(direction) {
+            const items = suggestionsBox.querySelectorAll(".suggestion-item");
+            if (items.length === 0) return;
+
+            if (activeSuggestionIndex >= 0) {
+                items[activeSuggestionIndex].classList.remove("active");
+            }
+
+            activeSuggestionIndex += direction;
+            if (activeSuggestionIndex < 0) activeSuggestionIndex = items.length - 1;
+            if (activeSuggestionIndex >= items.length) activeSuggestionIndex = 0;
+
+            items[activeSuggestionIndex].classList.add("active");
+        }
+
+        function applyActiveSuggestion() {
+            const items = suggestionsBox.querySelectorAll(".suggestion-item");
+            if (activeSuggestionIndex >= 0 && items[activeSuggestionIndex]) {
+                items[activeSuggestionIndex].click();
+                return true;
+            }
+            return false;
+        }
+
+        // --- Поиск ближайшего бренда (для логотипа) ---
         function findBrand(modelText) {
             const text = modelText.toLowerCase().trim();
 
@@ -726,7 +990,7 @@
             window.open(url, "_blank");
         }
 
-        // --- Shodan InternetDB (принимает IP или домен) ---
+        // --- Shodan InternetDB ---
         async function checkShodan() {
             const value = input.value.trim();
 
@@ -835,7 +1099,7 @@
             }
         }
 
-        // --- Заводские данные (через ssid.ai API) ---
+        // --- Заводские данные (ssid.ai) ---
         async function checkDefaults() {
             const model = input.value.trim();
 
@@ -1054,14 +1318,46 @@
         }
 
         // --- Слушатели ---
-        input.addEventListener("input", updateBrandLogo);
+        input.addEventListener("input", () => {
+            updateBrandLogo();
+            updateSuggestions();
+        });
 
         input.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" && e.ctrlKey) {
+            if (e.key === "ArrowDown") {
                 e.preventDefault();
-                searchAll();
-            } else if (e.key === "Enter") {
-                searchIn("dns");
+                navigateSuggestions(1);
+                return;
+            }
+            if (e.key === "ArrowUp") {
+                e.preventDefault();
+                navigateSuggestions(-1);
+                return;
+            }
+            if (e.key === "Escape") {
+                suggestionsBox.classList.remove("visible");
+                activeSuggestionIndex = -1;
+                return;
+            }
+            if (e.key === "Enter") {
+                if (applyActiveSuggestion()) {
+                    e.preventDefault();
+                    return;
+                }
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    searchAll();
+                } else {
+                    searchIn("dns");
+                }
+            }
+        });
+
+        // Скрытие подсказок при клике вне
+        document.addEventListener("click", (e) => {
+            if (!e.target.closest(".input-wrapper")) {
+                suggestionsBox.classList.remove("visible");
+                activeSuggestionIndex = -1;
             }
         });
 
