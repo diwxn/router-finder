@@ -100,7 +100,7 @@
             opacity: 1;
         }
 
-        /* Подсказки под полем */
+        /* Подсказки */
         .suggestions {
             position: absolute;
             top: 100%;
@@ -195,6 +195,7 @@
         .btn-google { background: #0f766e; }
         .btn-shodan { background: #7c2d12; }
         .btn-ssid { background: #1e40af; }
+        .btn-trace { background: #4b5563; }
 
         .status {
             margin-top: 20px;
@@ -268,6 +269,30 @@
             text-decoration: underline;
         }
 
+        /* Список хопов трассировки */
+        .hop-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            text-align: left;
+            width: 100%;
+            margin-top: 8px;
+            font-size: 13px;
+        }
+
+        .hop-item {
+            display: flex;
+            gap: 8px;
+            padding: 4px 8px;
+            background: #0f0f14;
+            border-radius: 6px;
+        }
+
+        .hop-num {
+            color: #66667a;
+            min-width: 20px;
+        }
+
         .hint {
             margin-top: 16px;
             font-size: 13px;
@@ -334,7 +359,7 @@
             flex: 1;
         }
 
-        /* --- История --- */
+        /* История */
         .history {
             margin-top: 25px;
             border-top: 1px solid #2a2a35;
@@ -520,6 +545,9 @@
         <div class="buttons">
             <button class="btn-shodan" onclick="checkShodan()">📡 Проверить IP (Shodan)</button>
             <button class="btn-ssid" onclick="checkDefaults()">🎯 Заводские данные</button>
+            <button class="btn-trace" onclick="runTraceroute()" style="grid-column: 1 / -1;">
+                🗺 Трассировка
+            </button>
         </div>
 
         <div class="status" id="status">Введите модель роутера и выберите действие</div>
@@ -593,7 +621,6 @@
             }
         ];
 
-        // --- База популярных моделей для автодополнения ---
         const MODELS = {
             "keenetic": [
                 "Giga", "Giga KN-1011", "Hopper", "Hopper KN-3810",
@@ -661,7 +688,6 @@
             return matrix[b.length][a.length];
         }
 
-        // --- Проверка шуточных исключений ---
         function checkEasterEgg(modelText) {
             const text = modelText.toLowerCase().trim();
             for (const egg of EASTER_EGGS) {
@@ -678,7 +704,6 @@
             return null;
         }
 
-        // --- Определение канонического бренда ---
         function getCanonicalBrand(inputText) {
             const text = inputText.toLowerCase().trim();
             if (!text) return null;
@@ -707,7 +732,6 @@
             return bestDist <= threshold ? best : null;
         }
 
-        // --- Определение канонической модели ---
         function getCanonicalModel(brandKey, modelPart) {
             if (!brandKey || !modelPart) return null;
 
@@ -742,7 +766,6 @@
             return bestDist <= threshold ? best : null;
         }
 
-        // --- Красивое отображение бренда ---
         function prettyBrand(brandKey) {
             return brandKey
                 .split("-")
@@ -750,7 +773,6 @@
                 .join("-");
         }
 
-        // --- Обновление подсказок ---
         function updateSuggestions() {
             const value = input.value.trim();
             suggestionsBox.innerHTML = "";
@@ -759,19 +781,16 @@
 
             if (!value) return;
 
-            // 0. Шуточные исключения — раньше всего
             const egg = checkEasterEgg(value);
             if (egg) {
-                showSuggestion("MikroTik", true);
+                showSuggestion("MikroTik", "шутка", true);
                 return;
             }
 
             const parts = value.split(/\s+/);
-            const firstWord = parts[0];
             const rest = parts.slice(1).join(" ");
             const brandKey = getCanonicalBrand(value);
 
-            // 1. Бренд + остаток → ищем модель (автоисправление)
             if (brandKey && rest) {
                 const canonicalModel = getCanonicalModel(brandKey, rest);
                 if (canonicalModel) {
@@ -780,9 +799,7 @@
                         showSuggestion(suggested, "автоисправление");
                     }
                 }
-            }
-            // 2. Только бренд → показываем популярные модели
-            else if (brandKey && !rest && value.length >= 3) {
+            } else if (brandKey && !rest && value.length >= 3) {
                 let key = brandKey.toLowerCase();
                 if (!MODELS[key] && MODELS[key.replace(/-/g, "")]) {
                     key = key.replace(/-/g, "");
@@ -846,7 +863,6 @@
             return false;
         }
 
-        // --- Поиск ближайшего бренда (для логотипа) ---
         function findBrand(modelText) {
             const text = modelText.toLowerCase().trim();
 
@@ -891,7 +907,6 @@
             return null;
         }
 
-        // --- Обновление логотипа ---
         function updateBrandLogo() {
             const model = input.value.trim();
             if (!model) {
@@ -916,7 +931,6 @@
             brandLogo.src = logoUrl;
         }
 
-        // --- Поиск в конкретном магазине ---
         function searchIn(shopKey) {
             const model = input.value.trim();
             if (!model) {
@@ -941,7 +955,6 @@
             window.open(url, "_blank");
         }
 
-        // --- Поиск во всех магазинах ---
         function searchAll() {
             const model = input.value.trim();
             if (!model) {
@@ -968,7 +981,6 @@
             });
         }
 
-        // --- Настройка подключения в Google ---
         function searchGoogleSetup() {
             const model = input.value.trim();
             const type = connType.value;
@@ -990,7 +1002,6 @@
             window.open(url, "_blank");
         }
 
-        // --- Shodan InternetDB ---
         async function checkShodan() {
             const value = input.value.trim();
 
@@ -1099,7 +1110,6 @@
             }
         }
 
-        // --- Заводские данные (ssid.ai) ---
         async function checkDefaults() {
             const model = input.value.trim();
 
@@ -1172,7 +1182,79 @@
             }
         }
 
-        // --- История запросов ---
+        // --- Трассировка через Globalping ---
+        async function runTraceroute() {
+            const value = input.value.trim();
+
+            if (!value) {
+                status.textContent = "⚠️ Введите домен или IP для трассировки";
+                status.className = "status warning";
+                input.focus();
+                return;
+            }
+
+            const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+            const domainRegex = /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+
+            if (!ipRegex.test(value) && !domainRegex.test(value)) {
+                status.innerHTML = `⚠️ <b>${value}</b> не похоже ни на IP, ни на домен.`;
+                status.className = "status warning";
+                return;
+            }
+
+            status.innerHTML = `🗺 Запускаю трассировку до <b>${value}</b>...<br><small>Это может занять 5–15 секунд</small>`;
+            status.className = "status";
+
+            try {
+                const response = await fetch(`${WORKER_URL}/api/trace`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ target: value })
+                });
+
+                const data = await response.json();
+
+                let hops = [];
+                if (data.results && data.results.length > 0) {
+                    const probeResult = data.results[0].result;
+                    if (probeResult && probeResult.hops) {
+                        hops = probeResult.hops;
+                    }
+                }
+
+                if (hops.length === 0) {
+                    status.innerHTML = `ℹ️ Трассировка до <b>${value}</b> не вернула данных.<br><small>Возможно, узел блокирует запросы.</small>`;
+                    status.className = "status";
+                    return;
+                }
+
+                let msg = `<div>🗺 <b>Трассировка ${value}</b> (${hops.length} хопов)</div>`;
+                msg += `<div class="hop-list">`;
+
+                hops.forEach((hop, index) => {
+                    const hopNum = index + 1;
+                    let rtt = "—";
+                    if (hop.timings && hop.timings.length > 0 && hop.timings[0] !== null) {
+                        rtt = `${hop.timings[0].toFixed(1)} ms`;
+                    }
+                    const addr = hop.resolvedAddress || "—";
+                    msg += `<div class="hop-item"><span class="hop-num">${hopNum}</span><span>${addr}</span><span style="margin-left:auto;color:#a5b4fc">${rtt}</span></div>`;
+                });
+
+                msg += `</div>`;
+                status.innerHTML = msg;
+                status.className = "status success";
+
+                addToHistory(value, "trace");
+
+            } catch (error) {
+                console.error("Traceroute error:", error);
+                status.innerHTML = `❌ Ошибка трассировки: ${error.message}`;
+                status.className = "status error";
+            }
+        }
+
+        // --- История ---
         const STORAGE_KEY = "routerHistory";
         const MAX_HISTORY = 20;
 
@@ -1243,6 +1325,7 @@
                 case "shodan": checkShodan(); break;
                 case "ssid":   checkDefaults(); break;
                 case "pppoe":  searchGoogleSetup(); break;
+                case "trace":  runTraceroute(); break;
                 default:       searchIn("dns");
             }
         }
@@ -1270,7 +1353,8 @@
             all: "Везде",
             shodan: "Shodan",
             ssid: "ssid.ai",
-            pppoe: "PPPoE"
+            pppoe: "PPPoE",
+            trace: "Трассировка"
         };
 
         function renderHistory() {
@@ -1353,7 +1437,6 @@
             }
         });
 
-        // Скрытие подсказок при клике вне
         document.addEventListener("click", (e) => {
             if (!e.target.closest(".input-wrapper")) {
                 suggestionsBox.classList.remove("visible");
