@@ -637,54 +637,23 @@
         }
 
         // --- Заводские данные (ssid.ai через прокси) ---
-        async function checkDefaults() {
-            const model = input.value.trim();
+        function checkDefaults() {
+    const model = input.value.trim();
 
-            if (!model) {
-                status.textContent = "⚠️ Введите модель роутера (например, TP-Link Archer AX55)";
-                status.className = "status warning";
-                input.focus();
-                return;
-            }
+    if (!model) {
+        status.textContent = "⚠️ Введите модель роутера (например, TP-Link Archer AX55)";
+        status.className = "status warning";
+        input.focus();
+        return;
+    }
 
-            status.innerHTML = `🎯 Ищу заводские данные для <b>${model}</b>...`;
-            status.className = "status";
+    status.innerHTML = `🎯 Открываю данные для <b>${model}</b> на ssid.ai...`;
+    status.className = "status success";
 
-            // ssid.ai использует MCP, не REST. Пробуем их публичный эндпоинт.
-            // Если не сработает — покажем сообщение с ссылкой на ssid.ai
-            const targetUrl = `https://ssid.ai/api/mcp/lookup?query=${encodeURIComponent(model)}`;
-
-            try {
-                const url = `${WORKER_URL}/?url=${encodeURIComponent(targetUrl)}`;
-                const response = await fetch(url);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                if (data && (data.defaultGatewayIp || data.loginHost)) {
-                    let msg = `🎯 <b>${data.brand || ""} ${data.modelName || model}</b><br>`;
-                    if (data.defaultGatewayIp) msg += `IP входа: <code>${data.defaultGatewayIp}</code><br>`;
-                    if (data.loginHost) msg += `Хост: <code>${data.loginHost}</code><br>`;
-                    if (data.defaultUsername) msg += `Логин: <code>${data.defaultUsername}</code><br>`;
-                    if (data.defaultPassword) msg += `Пароль: <code>${data.defaultPassword}</code><br>`;
-                    if (data.credTypeMeaning) msg += `<small>${data.credTypeMeaning}</small><br>`;
-                    if (data.resetSteps) msg += `<small>Сброс: ${data.resetSteps}</small>`;
-                    status.innerHTML = msg;
-                    status.className = "status success";
-                } else {
-                    status.innerHTML = `ℹ️ Заводские данные для <b>${model}</b> не найдены.<br><small>Проверь модель или зайди на <a href="https://ssid.ai" target="_blank" style="color:#a5b4fc">ssid.ai</a> вручную.</small>`;
-                    status.className = "status";
-                }
-
-            } catch (error) {
-                console.error("ssid.ai error:", error);
-                status.innerHTML = `⚠️ Не удалось получить данные ssid.ai.<br><small>Сервис может не отдавать данные через этот эндпоинт. Проверь: <a href="https://ssid.ai" target="_blank" style="color:#a5b4fc">ssid.ai</a></small>`;
-                status.className = "status warning";
-            }
-        }
+    // Открываем страницу ssid.ai с поиском по модели
+    const url = `https://ssid.ai/routers?q=${encodeURIComponent(model)}`;
+    window.open(url, "_blank");
+}
 
         // --- Слушатели ---
         input.addEventListener("input", updateBrandLogo);
