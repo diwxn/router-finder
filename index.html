@@ -498,6 +498,8 @@
         .history-list::-webkit-scrollbar-thumb:hover {
             background: #3a3a48;
         }
+
+        .btn-mac { background: #6d28d9; }
     </style>
 </head>
 <body>
@@ -547,6 +549,7 @@
             <button class="btn-ssid" onclick="checkDefaults()">🎯 Заводские данные</button>
             <button class="btn-trace" onclick="runTraceroute()" style="grid-column: 1 / -1;">
                 🗺 Трассировка
+            <button class="btn-mac" onclick="checkMac()">🆔 Проверить MAC</button>
             </button>
         </div>
 
@@ -1342,6 +1345,7 @@
                 case "ssid":   checkDefaults(); break;
                 case "pppoe":  searchGoogleSetup(); break;
                 case "trace":  runTraceroute(); break;
+                case "mac": checkMac(); break;
                 default:       searchIn("dns");
             }
         }
@@ -1371,6 +1375,7 @@
             ssid: "ssid.ai",
             pppoe: "PPPoE",
             trace: "Трассировка"
+            mac: "MAC"
         };
 
         function renderHistory() {
@@ -1416,6 +1421,64 @@
                 historyList.appendChild(row);
             });
         }
+
+        async function checkMac() {
+    const value = input.value.trim();
+
+    if (!value) {
+        status.textContent = "⚠️ Введите MAC-адрес (например, F4:F5:E8:11:22:33)";
+        status.className = "status warning";
+        input.focus();
+        return;
+    }
+
+    // Разные форматы MAC: XX:XX:XX:XX:XX:XX, XX-XX-XX-XX-XX-XX, XXXX.XXXX.XXXX
+    const macRegex = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$|^([0-9A-Fa-f]{4}\.){2}[0-9A-Fa-f]{4}$/;
+    
+    if (!macRegex.test(value)) {
+        status.innerHTML = `⚠️ <b>${value}</b> не похоже на MAC-адрес.<br><small>Форматы: F4:F5:E8:11:22:33, F4-F5-E8-11-22-33 или F4F5.E811.2233</small>`;
+        status.className = "status warning";
+        return;
+    }
+
+    status.innerHTML = `🆔 Ищу производителя для <b>${value}</b>...`;
+    status.className = "status";
+
+    try {
+        const apiUrl = `https://ssid.ai/api/v1/lookup?mac=${encodeURIComponent(value)}`;
+        const proxyUrl = `${WORKER_URL}/?url=${encodeURIComponent(apiUrl)}`;
+
+        const response = await fetch(proxyUrl);
+        const data = await response.json();
+
+        if (data.randomized) {
+            status.innerHTML = `🆔 <b>${value}</b><br>🎲 Это рандомизированный (приватный) MAC-адрес.<br><small>Современные телефоны генерируют такие для защиты приватности. Производителя определить нельзя.</small>`;
+            status.className = "status warning";
+            addToHistory(value, "mac");
+            return;
+        }
+
+        if (data.vendor && data.vendor.organization) {
+            let msg = `🆔 <b>${data.vendor.organization}</b><br>`;
+            msg += `<small>OUI: ${data.oui} · ${data.blockType || 'MA-L'}</small>`;
+            status.innerHTML = msg;
+            status.className = "status success";
+        } else if (data.detail) {
+            status.innerHTML = `ℹ️ <b>${value}</b>: ${data.detail}`;
+            status.className = "status";
+        } else {
+            status.innerHTML = `ℹ️ Производитель для <b>${value}</b> не найден.`;
+            status.className = "status";
+        }
+
+        addToHistory(value, "mac");
+
+    } catch (error) {
+        console.error("MAC lookup error:", error);
+        status.innerHTML = `❌ Ошибка запроса: ${error.message}`;
+        status.className = "status error";
+    }
+}
 
         // --- Слушатели ---
         input.addEventListener("input", () => {
