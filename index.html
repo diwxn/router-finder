@@ -543,15 +543,17 @@
             </button>
         </div>
 
-        <div class="section-title">Диагностика</div>
-        <div class="buttons">
-            <button class="btn-shodan" onclick="checkShodan()">📡 Проверить IP (Shodan)</button>
-            <button class="btn-ssid" onclick="checkDefaults()">🎯 Заводские данные</button>
-            <button class="btn-trace" onclick="runTraceroute()" style="grid-column: 1 / -1;">
-                🗺 Трассировка
-            <button class="btn-mac" onclick="checkMac()">🆔 Проверить MAC</button>
-            </button>
-        </div>
+       <div class="section-title">Диагностика</div>
+<div class="buttons">
+    <button class="btn-shodan" onclick="checkShodan()">📡 Проверить IP (Shodan)</button>
+    <button class="btn-ssid" onclick="checkDefaults()">🎯 Заводские данные</button>
+    <button class="btn-trace" onclick="runTraceroute()" style="grid-column: 1 / -1;">
+        🗺 Трассировка
+    </button>
+    <button class="btn-mac" onclick="checkMac()" style="grid-column: 1 / -1;">
+        🆔 Проверить MAC
+    </button>
+</div>
 
         <div class="status" id="status">Введите модель роутера и выберите действие</div>
 
@@ -1374,7 +1376,7 @@
             shodan: "Shodan",
             ssid: "ssid.ai",
             pppoe: "PPPoE",
-            trace: "Трассировка"
+            trace: "Трассировка",
             mac: "MAC"
         };
 
